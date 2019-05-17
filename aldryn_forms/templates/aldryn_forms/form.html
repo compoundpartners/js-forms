@@ -12,15 +12,21 @@
     {% endif %}
 
     {% if post_success %}
-        <p>
             {% if form_success_url %}
-                {% blocktrans %}You will be <a href="{{ form_success_url }}">redirected shortly</a>.{% endblocktrans %}
+                <p>{% blocktrans %}You will be <a href="{{ form_success_url }}">redirected shortly</a>.{% endblocktrans %}</p>
+            {% elif instance.get_gated_content_container %}
+                {% for plugin in instance.child_plugin_instances %}
+                    {% if plugin.pk == instance.get_gated_content_container.pk %}
+                        {% with show=True %}
+                            {% render_plugin plugin %}
+                        {% endwith %}
+                    {% endif %}
+                {% endfor %}
             {% elif instance.success_message %}
-                {{ instance.success_message }}
+                <p>{{ instance.success_message }}</p>
             {% else %}
-                {% blocktrans %}Thank you for submitting your information.{% endblocktrans %}
+                <p>{% blocktrans %}Thank you for submitting your information.{% endblocktrans %}</p>
             {% endif %}
-        </p>
     {% else %}
         {% csrf_token %}
         {% for plugin in instance.child_plugin_instances %}

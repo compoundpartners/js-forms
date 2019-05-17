@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class DefaultAction(BaseAction):
-    verbose_name = _('Default')
+    verbose_name = _('Email and save')
 
     def form_valid(self, cmsplugin, instance, request, form):
         recipients = cmsplugin.send_notifications(instance, form)

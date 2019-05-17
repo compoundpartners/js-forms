@@ -9,6 +9,7 @@ REQUIREMENTS = [
     'djangocms-text-ckeditor',
     'djangocms-attributes-field>=0.3.0',
     'django-simple-captcha',
+    'django-recaptcha2',
     'django-tablib',
     'tablib',
     'pillow',

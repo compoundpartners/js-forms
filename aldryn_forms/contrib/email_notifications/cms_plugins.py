@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+from functools import partial
 
 from email.utils import parseaddr
 
@@ -11,9 +12,13 @@ from cms.plugin_pool import plugin_pool
 
 from aldryn_forms.cms_plugins import FormPlugin
 from aldryn_forms.validators import is_valid_recipient
-
+from aldryn_forms.constants import (
+    ENABLE_FORM_TEMPLATE,
+    ENABLE_CUSTOM_CSS,
+)
 from .notification import DefaultNotificationConf
-from .models import EmailNotification, EmailNotificationFormPlugin
+from .models import EmailNotification, FieldConditional, EmailNotificationFormPlugin
+from . import forms
 
 
 logger = logging.getLogger(__name__)
@@ -23,8 +28,8 @@ class NewEmailNotificationInline(admin.StackedInline):
     extra = 1
     fields = ['theme']
     model = EmailNotification
-    verbose_name = _('new email notification')
-    verbose_name_plural = _('new email notifications')
+    verbose_name = _('add new email notification')
+    verbose_name_plural = _('add new email notifications')
 
     fieldsets = (
         (None, {
@@ -52,7 +57,6 @@ class ExistingEmailNotificationInline(admin.StackedInline):
             'classes': ('collapse',),
             'fields': (
                 'text_variables',
-                'to_user',
                 ('to_name', 'to_email'),
                 ('from_name', 'from_email'),
             )
@@ -117,32 +121,99 @@ class ExistingEmailNotificationInline(admin.StackedInline):
     text_variables.short_description = _('available text variables')
 
 
+class NewFieldConditionalInline(admin.StackedInline):
+    extra = 1
+    fields = ['field_name']
+    model = FieldConditional
+    form = forms.FieldConditionalForm
+    verbose_name = _('new conditional')
+    verbose_name_plural = _('new conditionals')
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'field_name',
+            )
+        }),
+    )
+
+    def get_queryset(self, request):
+        queryset = super(NewFieldConditionalInline, self).get_queryset(request)
+        return queryset.none()
+
+    def get_formset(self, request, obj=None, **kwargs):
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        return super(NewFieldConditionalInline, self).get_formset(request, obj, **kwargs)
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == 'field_name':
+            choices = [('','-----------')]
+            obj = kwargs.pop('obj', None)
+            if obj:
+                for field in obj.get_form_fields():
+                    if field.plugin_instance.option_set.exists():
+                        choices.append((field.name, field.label))
+            kwargs['widget'].choices = choices
+        return super(NewFieldConditionalInline, self).formfield_for_choice_field(db_field, request, **kwargs)
+
+class ExistingFieldConditionalInline(admin.StackedInline):
+    model = FieldConditional
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'field_value',
+                'action_type',
+                'action_value'
+            )
+        }),
+    )
+
+    readonly_fields = ['field_name_text']
+
+    def has_add_permission(self, request):
+        return False
+
+
 class EmailNotificationForm(FormPlugin):
-    name = _('Form (Advanced)')
+    name = _('Advanced Form')
     model = EmailNotificationFormPlugin
+    form = forms.EmailNotificationFormPluginForm
     inlines = [
         ExistingEmailNotificationInline,
-        NewEmailNotificationInline
+        NewEmailNotificationInline,
+        ExistingFieldConditionalInline,
+        NewFieldConditionalInline
     ]
     notification_conf_class = DefaultNotificationConf
+
+    advanced_fields = (
+        'redirect_type',
+        ('redirect_page', 'url'),
+    )
+    if ENABLE_FORM_TEMPLATE:
+        advanced_fields = (
+            'form_template',
+        )
+    if ENABLE_CUSTOM_CSS:
+        advanced_fields = (
+            'custom_classes',
+        )
+
 
     fieldsets = (
         (None, {
             'fields': (
                 'name',
-                'redirect_type',
-                ('redirect_page', 'url'),
-            )
-        }),
-        (_('Advanced Settings'), {
-            'classes': ('collapse',),
-            'fields': (
-                'form_template',
                 'error_message',
                 'success_message',
-                'custom_classes',
+                'recipients',
                 'action_backend',
             )
+        }),
+        (_('Redirect to'), {
+            'classes': ('collapse',),
+            'fields': advanced_fields
         }),
     )
 
@@ -153,10 +224,12 @@ class EmailNotificationForm(FormPlugin):
             # remove ExistingEmailNotificationInline inline instance
             # if we're first creating this object.
             inlines = [inline for inline in inlines
-                       if not isinstance(inline, ExistingEmailNotificationInline)]
+                       if isinstance(inline, (NewEmailNotificationInline, NewFieldConditionalInline))]
         return inlines
 
     def send_notifications(self, instance, form):
+        recipients = []
+        emails = []
         try:
             connection = get_connection(fail_silently=False)
             connection.open()
@@ -166,19 +239,24 @@ class EmailNotificationForm(FormPlugin):
             logger.exception("Could not send notification emails.")
             return []
 
-        notifications = instance.email_notifications.select_related('form')
+        conditionals = self.get_conditionals(instance, form, 'email')
 
-        emails = []
-        recipients = []
+        if conditionals:
+            for conditional in conditionals:
+                emails.append(conditional.prepare_email(form=form))
+                recipients.append(parseaddr(conditional.action_value))
+        else:
+            recipients = super(EmailNotificationForm, self).send_notifications(instance, form)
+            notifications = instance.email_notifications.select_related('form')
 
-        for notification in notifications:
-            email = notification.prepare_email(form=form)
+            for notification in notifications:
+                email = notification.prepare_email(form=form)
 
-            to_email = email.to[0]
+                to_email = email.to[0]
 
-            if is_valid_recipient(to_email):
-                emails.append(email)
-                recipients.append(parseaddr(to_email))
+                if is_valid_recipient(to_email):
+                    emails.append(email)
+                    recipients.append(parseaddr(to_email))
 
         try:
             connection.send_messages(emails)
@@ -187,6 +265,36 @@ class EmailNotificationForm(FormPlugin):
             logger.exception("Could not send notification emails.")
             recipients = []
         return recipients
+
+    def render(self, context, instance, placeholder):
+        context = super(EmailNotificationForm, self).render(context, instance, placeholder)
+        request = context['request']
+
+        form = self.process_form(instance, request)
+
+        if form.is_valid():
+            context['post_success'] = True
+            conditionals = self.get_conditionals(instance, form, 'redirect')
+            if conditionals:
+                context['form_success_url'] = conditionals[0].action_value
+            else:
+                context['form_success_url'] = self.get_success_url(instance)
+        context['form'] = form
+        if instance.get_gated_content_container and request.GET.get('noform') == 'true':
+            context['post_success'] = True
+        return context
+
+    def get_conditionals(self, instance, form, action_type):
+        conditionals = []
+        form_data = form.get_serialized_field_dict()
+        for c in instance.conditionals.select_related('form'):
+            if c.action_type == action_type and c.field_value in form_data.get(c.field_name).split(', '):
+                if action_type == 'email':
+                     if is_valid_recipient(c.action_value):
+                         conditionals.append(c)
+                else:
+                    conditionals.append(c)
+        return conditionals
 
 
 plugin_pool.register_plugin(EmailNotificationForm)

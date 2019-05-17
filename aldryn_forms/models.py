@@ -154,7 +154,7 @@ class BaseFormPlugin(CMSPlugin):
     )
 
     action_backend = models.CharField(
-        verbose_name=_('Action backend'),
+        verbose_name=_('Action'),
         max_length=ALDRYN_FORMS_ACTION_BACKEND_KEY_MAX_SIZE,
         default='default',
         choices=action_backend_choices(),
@@ -218,6 +218,18 @@ class BaseFormPlugin(CMSPlugin):
             plugin_class = element.get_plugin_class()
 
             if issubclass(plugin_class, SubmitButton):
+                return element
+        return
+
+    def get_gated_content_container(self):
+        from .cms_plugins import GatedContentContainer
+
+        form_elements = self.get_form_elements()
+
+        for element in form_elements:
+            plugin_class = element.get_plugin_class()
+
+            if issubclass(plugin_class, GatedContentContainer):
                 return element
         return
 
@@ -534,6 +546,18 @@ class FormButtonPlugin(CMSPlugin):
 
     def __str__(self):
         return self.label
+
+
+@python_2_unicode_compatible
+class GatedContentContainerPlugin(CMSPlugin):
+    attributes = AttributesField(
+        verbose_name=_('Attributes'),
+        blank=True,
+    )
+    cmsplugin_ptr = CMSPluginField()
+
+    def __str__(self):
+        return str(self.pk)
 
 
 @python_2_unicode_compatible

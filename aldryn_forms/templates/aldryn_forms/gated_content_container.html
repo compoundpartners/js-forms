@@ -1,0 +1,9 @@
+{% load i18n cms_tags sekizai_tags %}
+
+{% if request.toolbar.edit_mode or show %}
+    <div {{ instance.attributes_str }}>
+    {% for plugin in instance.child_plugin_instances %}
+        {% render_plugin plugin %}
+    {% endfor %}
+    </div>
+{% endif %}

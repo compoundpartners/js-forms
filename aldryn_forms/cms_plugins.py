@@ -46,7 +46,9 @@ from .validators import (
     MinChoicesValidator,
     MaxChoicesValidator
 )
-
+from .constants import (
+    ENABLE_SIMPLE_FORMS,
+)
 
 class FormElement(CMSPluginBase):
     # Don't cache anything.
@@ -60,7 +62,7 @@ class FieldContainer(FormElement):
 
 class FormPlugin(FieldContainer):
     render_template = True
-    name = _('Form')
+    name = _('Simple form')
     module = _('Form types')
     model = models.FormPlugin
     form = FormPluginForm
@@ -99,6 +101,8 @@ class FormPlugin(FieldContainer):
             context['post_success'] = True
             context['form_success_url'] = self.get_success_url(instance)
         context['form'] = form
+        if instance.get_gated_content_container and request.GET.get('noform') == 'true':
+            context['post_success'] = True
         return context
 
     def get_render_template(self, context, instance, placeholder):
@@ -873,7 +877,33 @@ else:
             # None means don't serialize me
             return None
 
-    plugin_pool.register_plugin(CaptchaField)
+    #plugin_pool.register_plugin(CaptchaField)
+
+try:
+    from snowpenguin.django.recaptcha2.fields import ReCaptchaField
+    from snowpenguin.django.recaptcha2.widgets import ReCaptchaWidget
+except ImportError:
+    pass
+else:
+    # Don't like doing this. But we shouldn't force captcha.
+    class ReCaptchaField(Field):
+        name = _('Re Captcha Field')
+        form = CaptchaFieldForm
+        form_field = ReCaptchaField
+        form_field_widget = ReCaptchaWidget
+        form_field_enabled_options = ['label', 'error_messages']
+        fieldset_general_fields = [
+            'label',
+        ]
+        fieldset_advanced_fields = [
+            'required_message',
+        ]
+
+        def serialize_field(self, *args, **kwargs):
+            # None means don't serialize me
+            return None
+
+    plugin_pool.register_plugin(ReCaptchaField)
 
 
 class SubmitButton(FormElement):
@@ -882,15 +912,28 @@ class SubmitButton(FormElement):
     model = models.FormButtonPlugin
 
 
+class GatedContentContainer(FormElement):
+    render_template = 'aldryn_forms/gated_content_container.html'
+    name = _('Gated Content Container')
+    model = models.GatedContentContainerPlugin
+    fields = ['attributes']
+    allow_children = True
+    cache = True
+    require_parent = True
+    parent_classes = ['Form', 'EmailNotificationForm']
+
+
 plugin_pool.register_plugin(BooleanField)
 plugin_pool.register_plugin(EmailField)
 plugin_pool.register_plugin(FileField)
+plugin_pool.register_plugin(GatedContentContainer)
 plugin_pool.register_plugin(HiddenField)
 plugin_pool.register_plugin(PhoneField)
 plugin_pool.register_plugin(NumberField)
 plugin_pool.register_plugin(ImageField)
 plugin_pool.register_plugin(Fieldset)
-plugin_pool.register_plugin(FormPlugin)
+if ENABLE_SIMPLE_FORMS:
+    plugin_pool.register_plugin(FormPlugin)
 plugin_pool.register_plugin(MultipleSelectField)
 plugin_pool.register_plugin(MultipleCheckboxSelectField)
 plugin_pool.register_plugin(RadioSelectField)

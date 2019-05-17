@@ -10,6 +10,9 @@ from sizefield.utils import filesizeformat
 
 from .models import FormSubmission, FormPlugin
 from .utils import add_form_error, get_user_model
+from .constants import (
+    DEFAULT_ACTION_BACKEND
+)
 
 
 class FileSizeCheckMixin(object):
@@ -132,6 +135,11 @@ class FormSubmissionBaseForm(forms.Form):
         fields = [(field.label, field.value) for field in fields]
         return fields
 
+    def get_serialized_field_dict(self, is_confirmation=False):
+        fields = self.get_serialized_fields(is_confirmation)
+        fields = [(field.name, field.value) for field in fields]
+        return dict(fields)
+
     def get_cleaned_data(self, is_confirmation=False):
         fields = self.get_serialized_fields(is_confirmation)
         form_data = dict((field.name, field.value) for field in fields)
@@ -151,6 +159,9 @@ class ExtandableErrorForm(forms.ModelForm):
 class FormPluginForm(ExtandableErrorForm):
 
     def __init__(self, *args, **kwargs):
+        if 'initial' in kwargs:
+            kwargs['initial']['action_backend'] = DEFAULT_ACTION_BACKEND
+
         super(FormPluginForm, self).__init__(*args, **kwargs)
 
         if (getattr(settings, 'ALDRYN_FORMS_SHOW_ALL_RECIPIENTS', False) and

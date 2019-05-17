@@ -27,6 +27,10 @@ EMAIL_THEMES = getattr(
     "ALDRYN_FORMS_EMAIL_THEMES",
     [('default', _('default'))]
 )
+ACTION_TYPES = (
+    ('email', 'Email to'),
+    ('redirect', 'Redirect to'),
+)
 
 
 class EmailNotificationFormPlugin(FormPlugin):
@@ -35,7 +39,13 @@ class EmailNotificationFormPlugin(FormPlugin):
         proxy = True
 
     def copy_relations(self, oldinstance):
+        for recipient in oldinstance.recipients.all():
+            self.recipients.add(recipient)
         for item in oldinstance.email_notifications.all():
+            item.pk = None
+            item.form = self
+            item.save()
+        for item in oldinstance.conditionals.all():
             item.pk = None
             item.form = self
             item.save()
@@ -93,7 +103,8 @@ class EmailNotification(models.Model):
     from_email = models.CharField(
         verbose_name=_('from email'),
         max_length=200,
-        blank=True
+        blank=True,
+        help_text='Must be from a verified domain'
     )
     subject = models.CharField(
         verbose_name=_("subject"),
@@ -223,3 +234,114 @@ class EmailNotification(models.Model):
 
     def render_subject(self, context):
         return render_text(self.subject, context)
+
+
+@python_2_unicode_compatible
+class FieldConditional(models.Model):
+
+    class Meta:
+        verbose_name = _('conditional')
+        verbose_name_plural = _('conditionals')
+
+    field_name = models.CharField(
+        verbose_name=_('field'),
+        max_length=255,
+    )
+    field_value = models.CharField(
+        verbose_name=_('field value'),
+        max_length=255,
+    )
+    action_type = models.CharField(
+        verbose_name=_('action'),
+        max_length=20,
+        choices=ACTION_TYPES
+    )
+    action_value = models.CharField(
+        verbose_name=_('to name'),
+        max_length=255,
+    )
+    form = models.ForeignKey(
+        to=EmailNotificationFormPlugin,
+        related_name='conditionals'
+    )
+
+    def __str__(self):
+        if self.form:
+            field = self.form.get_form_fields_by_name().get(self.field_name)
+            if field:
+                return field.label or self.field_name
+        return self.field_name
+
+    def get_recipient_name(self):
+        return self.action_value
+
+    def get_recipient_email(self):
+        return self.action_value
+
+    def get_email_context(self, form):
+        get_template = partial(get_theme_template_name, theme='default')
+
+        context = {
+            'form_plugin': self.form,
+            'form_data': form.get_serialized_field_choices(is_confirmation=True),
+            'form_name': self.form.name,
+            'email_notification': self,
+            'email_html_theme': get_template(suffix='html'),
+            'email_txt_theme': get_template(suffix='txt'),
+        }
+        return context
+
+    def get_email_kwargs(self, form):
+        form_plugin = self.form
+
+        text_context = form_plugin.get_notification_text_context(form)
+
+        email_context = self.get_email_context(form)
+        email_context['text_context'] = text_context
+
+        notification_conf = form_plugin.get_notification_conf()
+
+        kwargs = {
+            'context': email_context,
+            'language': form_plugin.language,
+            # needs to be empty string because emailit expects a string
+            # it's empty so the template lookup fails.
+            'template_base': '',
+            'body_templates': [
+                notification_conf.get_txt_email_template_name()],
+            'subject_templates': [
+                get_email_template_name(name='subject', suffix='txt')],
+        }
+
+        if notification_conf.html_email_format_enabled:
+            # we only want to render html template if html format is enabled.
+            kwargs['html_templates'] = [
+                notification_conf.get_html_email_template_name()]
+
+        render = partial(render_text, context=text_context)
+
+        recipient_name = self.get_recipient_name()
+
+        recipient_email = self.get_recipient_email()
+        recipient_email = render(recipient_email)
+
+        if recipient_name:
+            recipient_name = render(recipient_name)
+            recipient_email = formataddr((recipient_name, recipient_email))
+
+        kwargs['recipients'] = [recipient_email]
+
+        return kwargs
+
+    def prepare_email(self, form):
+        email_kwargs = self.get_email_kwargs(form)
+        return construct_mail(**email_kwargs)
+
+    def render_body_text(self, context):
+        return ''
+
+    def render_body_html(self, context):
+        return ''
+
+    def render_subject(self, context):
+        return ''
