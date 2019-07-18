@@ -27,3 +27,8 @@ DEFAULT_ACTION_BACKEND = getattr(
     'ALDRYN_FORMS_DEFAULT_ACTION_BACKEND',
     'email_only',
 )
+RECAPTCHA_PUBLIC_KEY = getattr(
+    settings,
+    'RECAPTCHA_PUBLIC_KEY',
+    'TESTKEY',
+)

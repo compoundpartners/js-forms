@@ -48,6 +48,7 @@ from .validators import (
 )
 from .constants import (
     ENABLE_SIMPLE_FORMS,
+    RECAPTCHA_PUBLIC_KEY,
 )
 
 class FormElement(CMSPluginBase):
@@ -208,6 +209,8 @@ class FormPlugin(FieldContainer):
 
     def send_notifications(self, instance, form):
         users = instance.recipients.exclude(email='')
+        if hasattr(self, email_notifications):
+            users = users.exclude(pk__in=self.email_notifications.values_list('id',flat=True))
 
         recipients = [user for user in users.iterator()
                       if is_valid_recipient(user.email)]
@@ -386,8 +389,11 @@ class Field(FormElement):
 
         if form and hasattr(form, 'form_plugin'):
             form_plugin = form.form_plugin
-            field_name = form_plugin.get_form_field_name(field=instance)
-            context['field'] = form[field_name]
+            try:
+                field_name = form_plugin.get_form_field_name(field=instance)
+                context['field'] = form[field_name]
+            except:
+                pass
         return context
 
     def get_render_template(self, context, instance, placeholder):
@@ -902,6 +908,9 @@ else:
         def serialize_field(self, *args, **kwargs):
             # None means don't serialize me
             return None
+
+        def get_form_field_widget_kwargs(self, instance):
+            return {'public_key': RECAPTCHA_PUBLIC_KEY}
 
     plugin_pool.register_plugin(ReCaptchaField)
 

@@ -57,6 +57,7 @@ class ExistingEmailNotificationInline(admin.StackedInline):
             'classes': ('collapse',),
             'fields': (
                 'text_variables',
+                'to_user',
                 ('to_name', 'to_email'),
                 ('from_name', 'from_email'),
             )
@@ -66,6 +67,18 @@ class ExistingEmailNotificationInline(admin.StackedInline):
     readonly_fields = ['text_variables']
     text_variables_help_text = _('variables can be used with by '
                                  'wrapping with "${variable}" like ${variable}')
+
+    def get_formset(self, request, obj=None, **kwargs):
+        kwargs['formfield_callback'] = partial(self.formfield_for_dbfield, request=request, obj=obj)
+        return super(ExistingEmailNotificationInline, self).get_formset(request, obj, **kwargs)
+
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        obj = kwargs.pop('obj', None)
+        if obj and db_field.name == 'to_user':
+            kwargs['queryset'] = obj.recipients.all()
+            return super(ExistingEmailNotificationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
+        return super(ExistingEmailNotificationInline, self).formfield_for_dbfield(db_field, request, **kwargs)
 
     def has_add_permission(self, request):
         return False
@@ -151,7 +164,7 @@ class NewFieldConditionalInline(admin.StackedInline):
             obj = kwargs.pop('obj', None)
             if obj:
                 for field in obj.get_form_fields():
-                    if field.plugin_instance.option_set.exists():
+                    if hasattr(field.plugin_instance, 'option_set') and field.plugin_instance.option_set.exists():
                         choices.append((field.name, field.label))
             kwargs['widget'].choices = choices
         return super(NewFieldConditionalInline, self).formfield_for_choice_field(db_field, request, **kwargs)
@@ -205,10 +218,10 @@ class EmailNotificationForm(FormPlugin):
         (None, {
             'fields': (
                 'name',
-                'error_message',
                 'success_message',
-                'recipients',
+                'error_message',
                 'action_backend',
+                'recipients',
             )
         }),
         (_('Redirect to'), {
