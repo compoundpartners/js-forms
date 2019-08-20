@@ -171,6 +171,7 @@ class NewFieldConditionalInline(admin.StackedInline):
 
 class ExistingFieldConditionalInline(admin.StackedInline):
     model = FieldConditional
+    form = forms.FieldConditionalForm
 
     fieldsets = (
         (None, {
@@ -253,9 +254,14 @@ class EmailNotificationForm(FormPlugin):
             return []
 
         conditionals = self.get_conditionals(instance, form, 'email')
-
         if conditionals:
             for conditional in conditionals:
+                emails.append(conditional.prepare_email(form=form))
+                recipients.append(parseaddr(conditional.action_value))
+
+        redirect_emails = self.get_conditionals(instance, form, 'redirect-email')
+        if redirect_emails:
+            for conditional in redirect_emails:
                 emails.append(conditional.prepare_email(form=form))
                 recipients.append(parseaddr(conditional.action_value))
         else:
@@ -264,12 +270,19 @@ class EmailNotificationForm(FormPlugin):
 
             for notification in notifications:
                 email = notification.prepare_email(form=form)
+                copy_email = notification.prepare_copy_email(form=form)
 
                 to_email = email.to[0]
+                to_copy_email = copy_email.to[0]
+
 
                 if is_valid_recipient(to_email):
                     emails.append(email)
                     recipients.append(parseaddr(to_email))
+                if to_email != to_copy_email and is_valid_recipient(to_copy_email):
+                    emails.append(copy_email)
+                    recipients.append(parseaddr(to_copy_email))
+
 
         try:
             connection.send_messages(emails)
@@ -301,8 +314,9 @@ class EmailNotificationForm(FormPlugin):
         conditionals = []
         form_data = form.get_serialized_field_dict()
         for c in instance.conditionals.select_related('form'):
-            if c.action_type == action_type and c.field_value in form_data.get(c.field_name).split(', '):
-                if action_type == 'email':
+            value = form_data.get(c.field_name)
+            if c.action_type == action_type and value and c.field_value in value.split(', '):
+                if action_type in ['email', 'redirect-email']:
                      if is_valid_recipient(c.action_value):
                          conditionals.append(c)
                 else:

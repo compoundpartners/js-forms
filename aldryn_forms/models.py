@@ -437,6 +437,13 @@ class FieldPluginBase(CMSPlugin):
     def get_label(self):
         return self.label or self.placeholder_text
 
+    def get_form_plugin(self):
+        from .cms_plugins import FormPlugin as FormPluginPlugin
+        for plugin in self.get_ancestors():
+            if issubclass(plugin.get_plugin_class(), FormPluginPlugin):
+                return plugin.get_plugin_instance()[0]
+            return None
+
 
 class FieldPlugin(FieldPluginBase):
     def copy_relations(self, oldinstance):

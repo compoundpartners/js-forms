@@ -95,12 +95,13 @@ class FormPlugin(FieldContainer):
     def render(self, context, instance, placeholder):
         context = super(FormPlugin, self).render(context, instance, placeholder)
         request = context['request']
-
         form = self.process_form(instance, request)
 
         if form.is_valid():
             context['post_success'] = True
             context['form_success_url'] = self.get_success_url(instance)
+        elif request.method == 'POST':
+            context['post_request'] = True
         context['form'] = form
         if instance.get_gated_content_container and request.GET.get('noform') == 'true':
             context['post_success'] = True
@@ -209,24 +210,23 @@ class FormPlugin(FieldContainer):
 
     def send_notifications(self, instance, form):
         users = instance.recipients.exclude(email='')
-        if hasattr(self, email_notifications):
-            users = users.exclude(pk__in=self.email_notifications.values_list('id',flat=True))
 
         recipients = [user for user in users.iterator()
                       if is_valid_recipient(user.email)]
 
-        context = {
-            'form_name': instance.name,
-            'form_data': form.get_serialized_field_choices(),
-            'form_plugin': instance,
-        }
+        if recipients:
+            context = {
+                'form_name': instance.name,
+                'form_data': form.get_serialized_field_choices(),
+                'form_plugin': instance,
+            }
 
-        send_mail(
-            recipients=[user.email for user in recipients],
-            context=context,
-            template_base='aldryn_forms/emails/notification',
-            language=instance.language,
-        )
+            send_mail(
+                recipients=[user.email for user in recipients],
+                context=context,
+                template_base='aldryn_forms/emails/notification',
+                language=instance.language,
+            )
 
         users_notified = [
             (get_user_name(user), user.email) for user in recipients]

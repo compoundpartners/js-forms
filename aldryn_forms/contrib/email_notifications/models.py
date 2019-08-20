@@ -28,7 +28,8 @@ EMAIL_THEMES = getattr(
     [('default', _('default'))]
 )
 ACTION_TYPES = (
-    ('email', 'Email to'),
+    ('email', 'CC Email to'),
+    ('redirect-email', 'Redirect email to'),
     ('redirect', 'Redirect to'),
 )
 
@@ -137,13 +138,19 @@ class EmailNotification(models.Model):
         if self.pk and not recipient_email:
             message = ugettext('Please provide a recipient.')
             raise ValidationError(message)
+        if self.pk and self.body_html and not self.body_text:
+            import html2text
+            h = html2text.HTML2Text()
+            h.reference_links = False
+            self.body_text = h.handle(self.body_html)
+
 
     def get_recipient_name(self):
         if self.to_name:
             # manual name takes precedence over user relationship.
             name = self.to_name
-        elif self.to_user_id:
-            name = get_user_name(self.to_user)
+        #elif self.to_user_id:
+        #    name = get_user_name(self.to_user)
         else:
             name = ''
         return name
@@ -222,8 +229,19 @@ class EmailNotification(models.Model):
             kwargs['reply_to'] = [from_email]
         return kwargs
 
+    def get_copy_email_kwargs(self, form):
+        kwargs = self.get_email_kwargs(form)
+        if self.to_user_id:
+            kwargs['recipients'] = [self.to_user.email]
+        return kwargs
+
+
     def prepare_email(self, form):
         email_kwargs = self.get_email_kwargs(form)
+        return construct_mail(**email_kwargs)
+
+    def prepare_copy_email(self, form):
+        email_kwargs = self.get_copy_email_kwargs(form)
         return construct_mail(**email_kwargs)
 
     def render_body_text(self, context):

@@ -149,11 +149,34 @@ class FormSubmissionBaseForm(forms.Form):
         self.instance.set_form_data(self)
         self.instance.save()
 
+    def clean_recipients(self):
+        data = self.cleaned_data['recipients']
+        if not data:
+            raise forms.ValidationError("Please select recipients")
+        return data
+
 
 class ExtandableErrorForm(forms.ModelForm):
 
     def append_to_errors(self, field, message):
         add_form_error(form=self, message=message, field=field)
+
+
+class CheckNameMixin(object):
+
+    def clean_name(self):
+        data = self.cleaned_data['name']
+        if '-' in data or ' ' in data:
+            raise forms.ValidationError("Please fix field name")
+        if data:
+            form_plugin = self.instance.get_form_plugin()
+            if form_plugin:
+                plugins = form_plugin.get_form_elements()
+                if plugins:
+                    for plugin in plugins:
+                        if hasattr(plugin, 'name') and plugin.name == data and self.instance.pk != plugin.pk:
+                            raise forms.ValidationError("Filed name is not unique")
+        return data
 
 
 class FormPluginForm(ExtandableErrorForm):
@@ -232,7 +255,7 @@ class MinMaxValueForm(ExtandableErrorForm):
         return self.cleaned_data
 
 
-class TextFieldForm(MinMaxValueForm):
+class TextFieldForm(CheckNameMixin, MinMaxValueForm):
 
     def __init__(self, *args, **kwargs):
         super(TextFieldForm, self).__init__(*args, **kwargs)
