@@ -484,6 +484,36 @@ class EmailFieldPlugin(FieldPluginBase):
     )
 
 
+class MandrillEmailFieldPlugin(FieldPluginBase):
+    email_send_notification = models.BooleanField(
+        verbose_name=_('send notification when form is submitted'),
+        default=False,
+        help_text=_('When checked, the value of this field will be used to '
+                    'send an email notification.')
+    )
+    email_subject = models.CharField(
+        verbose_name=_('email subject'),
+        max_length=255,
+        blank=True,
+        default='',
+        help_text=_('Used as the email subject when email_send_notification '
+                    'is checked.')
+    )
+    email_body = models.TextField(
+        verbose_name=_('Additional email body'),
+        blank=True,
+        default='',
+        help_text=_('Additional body text used when email notifications '
+                    'are active.')
+    )
+    email_template_name = models.CharField(
+        verbose_name=_('mandrill email template name'),
+        max_length=255,
+        blank=True,
+        default='',
+    )
+
+
 class FileFieldPluginBase(FieldPluginBase):
     upload_to = FilerFolderField(
         verbose_name=_('Upload files to'),

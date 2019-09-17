@@ -24,6 +24,7 @@ from .forms import (
     RestrictedFileField,
     RestrictedImageField,
     EmailFieldForm,
+    MandrillEmailFieldForm,
     FormSubmissionBaseForm,
     FormPluginForm,
     TextFieldForm,
@@ -592,6 +593,50 @@ class EmailField(BaseTextField):
 
         if email and instance.email_send_notification:
             self.send_notification_email(email, form, instance)
+
+try:
+    import mandrillit.api
+except ImportError:
+    pass
+else:
+    class MandrillEmailField(BaseTextField):
+        name = _('Email Field (Mandrill)')
+        model = models.MandrillEmailFieldPlugin
+        form = MandrillEmailFieldForm
+        form_field = forms.EmailField
+        form_field_widget = forms.EmailInput
+        form_field_widget_input_type = 'email'
+        fieldset_advanced_fields = [
+            'email_send_notification',
+            'email_subject',
+            'email_body',
+            'email_template_name',
+        ] + Field.fieldset_advanced_fields
+        email_template_base = 'aldryn_forms/emails/user/notification'
+
+        def send_notification_email(self, email, form, form_field_instance):
+            context = {
+                'form_name': form.instance.name,
+                'form_data': form.get_serialized_field_choices(is_confirmation=True),
+                'body_text': form_field_instance.email_body,
+            }
+            mandrillit.api.send_mail(
+                recipients=[email],
+                context=context,
+                subject=form_field_instance.email_subject,
+                template_base=self.email_template_base,
+                mandrill_template=form_field_instance.email_template_name
+            )
+
+        def form_post_save(self, instance, form, **kwargs):
+            field_name = form.form_plugin.get_form_field_name(field=instance)
+
+            email = form.cleaned_data.get(field_name)
+
+            if email and instance.email_send_notification:
+                self.send_notification_email(email, form, instance)
+
+    plugin_pool.register_plugin(MandrillEmailField)
 
 
 class FileField(Field):

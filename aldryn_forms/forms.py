@@ -300,6 +300,30 @@ class EmailFieldForm(TextFieldForm):
         ]
 
 
+class MandrillEmailFieldForm(TextFieldForm):
+
+    def __init__(self, *args, **kwargs):
+        super(MandrillEmailFieldForm, self).__init__(*args, **kwargs)
+        self.fields['min_value'].required = False
+        self.fields['max_value'].required = False
+
+    class Meta:
+        fields = [
+            'label',
+            'placeholder_text',
+            'help_text',
+            'min_value',
+            'max_value',
+            'required',
+            'required_message',
+            'email_send_notification',
+            'email_subject',
+            'email_body',
+            'email_template_name',
+            'custom_classes',
+        ]
+
+
 class FileFieldForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(FileFieldForm, self).__init__(*args, **kwargs)
