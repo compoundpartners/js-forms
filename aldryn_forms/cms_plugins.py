@@ -14,7 +14,12 @@ from django.utils.translation import ugettext, ugettext_lazy as _
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
 
-from emailit.api import send_mail
+MANDRILL = False
+try:
+    from mandrillit.api import send_mail
+    MANDRILL = True
+except ImportError:
+    from emailit.api import send_mail
 
 from filer.models import filemodels, imagemodels
 from sizefield.utils import filesizeformat
@@ -50,6 +55,7 @@ from .validators import (
 from .constants import (
     ENABLE_SIMPLE_FORMS,
     RECAPTCHA_PUBLIC_KEY,
+    MANDRILL_DEFAULT_TEMPLATE,
 )
 
 class FormElement(CMSPluginBase):
@@ -209,7 +215,7 @@ class FormPlugin(FieldContainer):
         message = instance.success_message or ugettext('The form has been sent.')
         messages.success(request, mark_safe(message))
 
-    def send_notifications(self, instance, form):
+    def send_notifications(self, instance, form, request=None):
         users = instance.recipients.exclude(email='')
 
         recipients = [user for user in users.iterator()
@@ -220,13 +226,17 @@ class FormPlugin(FieldContainer):
                 'form_name': instance.name,
                 'form_data': form.get_serialized_field_choices(),
                 'form_plugin': instance,
+                'request': request,
             }
-
+            kwargs = {}
+            if MANDRILL and MANDRILL_DEFAULT_TEMPLATE:
+                kwargs['mandrill_template'] = MANDRILL_DEFAULT_TEMPLATE
             send_mail(
                 recipients=[user.email for user in recipients],
                 context=context,
                 template_base='aldryn_forms/emails/notification',
                 language=instance.language,
+                **kwargs
             )
 
         users_notified = [
@@ -579,11 +589,15 @@ class EmailField(BaseTextField):
             'form_data': form.get_serialized_field_choices(is_confirmation=True),
             'body_text': form_field_instance.email_body,
         }
+        kwargs = {}
+        if MANDRILL and MANDRILL_DEFAULT_TEMPLATE:
+            kwargs['mandrill_template'] = MANDRILL_DEFAULT_TEMPLATE
         send_mail(
             recipients=[email],
             context=context,
             subject=form_field_instance.email_subject,
-            template_base=self.email_template_base
+            template_base=self.email_template_base,
+            **kwargs
         )
 
     def form_post_save(self, instance, form, **kwargs):
@@ -594,11 +608,7 @@ class EmailField(BaseTextField):
         if email and instance.email_send_notification:
             self.send_notification_email(email, form, instance)
 
-try:
-    import mandrillit.api
-except ImportError:
-    pass
-else:
+if MANDRILL:
     class MandrillEmailField(BaseTextField):
         name = _('Email Field (Mandrill)')
         model = models.MandrillEmailFieldPlugin
@@ -620,12 +630,12 @@ else:
                 'form_data': form.get_serialized_field_choices(is_confirmation=True),
                 'body_text': form_field_instance.email_body,
             }
-            mandrillit.api.send_mail(
+            send_mail(
                 recipients=[email],
                 context=context,
                 subject=form_field_instance.email_subject,
                 template_base=self.email_template_base,
-                mandrill_template=form_field_instance.email_template_name
+                mandrill_template=form_field_instance.email_template_name or MANDRILL_DEFAULT_TEMPLATE
             )
 
         def form_post_save(self, instance, form, **kwargs):

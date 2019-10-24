@@ -4,6 +4,13 @@ from functools import partial
 
 from email.utils import parseaddr
 
+MANDRILL = False
+try:
+    from mandrillit.api import send_constructed_mail
+    MANDRILL = True
+except ImportError:
+    pass
+
 from django.contrib import admin
 from django.core.mail import get_connection
 from django.utils.translation import ugettext_lazy as _
@@ -15,6 +22,7 @@ from aldryn_forms.validators import is_valid_recipient
 from aldryn_forms.constants import (
     ENABLE_FORM_TEMPLATE,
     ENABLE_CUSTOM_CSS,
+    MANDRILL_DEFAULT_TEMPLATE,
 )
 from .notification import DefaultNotificationConf
 from .models import EmailNotification, FieldConditional, EmailNotificationFormPlugin
@@ -241,17 +249,18 @@ class EmailNotificationForm(FormPlugin):
                        if isinstance(inline, (NewEmailNotificationInline, NewFieldConditionalInline))]
         return inlines
 
-    def send_notifications(self, instance, form):
+    def send_notifications(self, instance, form, request=None):
         recipients = []
         emails = []
-        try:
-            connection = get_connection(fail_silently=False)
-            connection.open()
-        except:  # noqa
-            # I use a "catch all" in order to not couple this handler to a specific email backend
-            # different email backends have different exceptions.
-            logger.exception("Could not send notification emails.")
-            return []
+        if not MANDRILL:
+            try:
+                connection = get_connection(fail_silently=False)
+                connection.open()
+            except:  # noqa
+                # I use a "catch all" in order to not couple this handler to a specific email backend
+                # different email backends have different exceptions.
+                logger.exception("Could not send notification emails.")
+                return []
 
         conditionals = self.get_conditionals(instance, form, 'email')
         if conditionals:
@@ -265,15 +274,15 @@ class EmailNotificationForm(FormPlugin):
                 emails.append(conditional.prepare_email(form=form))
                 recipients.append(parseaddr(conditional.action_value))
         else:
-            recipients = super(EmailNotificationForm, self).send_notifications(instance, form)
+            recipients = super(EmailNotificationForm, self).send_notifications(instance, form, request)
             notifications = instance.email_notifications.select_related('form')
 
             for notification in notifications:
                 email = notification.prepare_email(form=form)
                 copy_email = notification.prepare_copy_email(form=form)
 
-                to_email = email.to[0]
-                to_copy_email = copy_email.to[0]
+                to_email = email['to'][0]['email'] if MANDRILL else email.to[0]
+                to_copy_email = copy_email['to'][0]['email'] if MANDRILL else copy_email.to[0]
 
 
                 if is_valid_recipient(to_email):
@@ -284,13 +293,18 @@ class EmailNotificationForm(FormPlugin):
                     recipients.append(parseaddr(to_copy_email))
 
 
-        try:
-            connection.send_messages(emails)
-        except:  # noqa
-            # again, we catch all exceptions to be backend agnostic
-            logger.exception("Could not send notification emails.")
-            recipients = []
-        return recipients
+        if MANDRILL:
+            for email in emails:
+                send_constructed_mail(email, MANDRILL_DEFAULT_TEMPLATE)
+            return recipients
+        else:
+            try:
+                connection.send_messages(emails)
+            except:  # noqa
+                # again, we catch all exceptions to be backend agnostic
+                logger.exception("Could not send notification emails.")
+                recipients = []
+            return recipients
 
     def render(self, context, instance, placeholder):
         context = super(EmailNotificationForm, self).render(context, instance, placeholder)

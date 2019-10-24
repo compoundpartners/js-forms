@@ -32,3 +32,8 @@ RECAPTCHA_PUBLIC_KEY = getattr(
     'RECAPTCHA_PUBLIC_KEY',
     'TESTKEY',
 )
+MANDRILL_DEFAULT_TEMPLATE = getattr(
+    settings,
+    'MANDRILL_DEFAULT_TEMPLATE',
+    None,
+)

@@ -12,7 +12,7 @@ class DefaultAction(BaseAction):
     verbose_name = _('Email and save')
 
     def form_valid(self, cmsplugin, instance, request, form):
-        recipients = cmsplugin.send_notifications(instance, form)
+        recipients = cmsplugin.send_notifications(instance, form, request)
         form.instance.set_recipients(recipients)
         form.save()
         cmsplugin.send_success_message(instance, request)
@@ -22,7 +22,7 @@ class EmailAction(BaseAction):
     verbose_name = _('Email only')
 
     def form_valid(self, cmsplugin, instance, request, form):
-        recipients = cmsplugin.send_notifications(instance, form)
+        recipients = cmsplugin.send_notifications(instance, form, request)
         logger.info('Sent email notifications to {} recipients.'.format(len(recipients)))
 
 

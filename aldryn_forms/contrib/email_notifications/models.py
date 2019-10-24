@@ -13,7 +13,10 @@ from djangocms_text_ckeditor.fields import HTMLField
 from aldryn_forms.helpers import get_user_name
 from aldryn_forms.models import FormPlugin
 
-from emailit.api import construct_mail
+try:
+    from mandrillit.api import construct_mail
+except ImportError:
+    from emailit.api import construct_mail
 
 from .helpers import (
     get_email_template_name,
