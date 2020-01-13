@@ -7,6 +7,16 @@ SHOW_ALL_RECIPIENTS = getattr(
     'ALDRYN_FORMS_SHOW_ALL_RECIPIENTS',
     True,
 )
+ENABLE_API = getattr(
+    settings,
+    'ALDRYN_FORMS_ENABLE_API',
+    False,
+)
+ENABLE_LOCALSTORAGE = getattr(
+    settings,
+    'ALDRYN_FORMS_ENABLE_LOCALSTORAGE',
+    False,
+)
 ENABLE_SIMPLE_FORMS = getattr(
     settings,
     'ALDRYN_FORMS_ENABLE_SIMPLE_FORMS',

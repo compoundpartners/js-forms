@@ -105,6 +105,12 @@ class BaseFormPlugin(CMSPlugin):
         (REDIRECT_TO_PAGE, _('CMS Page')),
         (REDIRECT_TO_URL, _('Absolute URL')),
     ]
+    TYPE_CHOICES = (
+        ('event', _('Event')),
+        ('download', _('Download')),
+        ('contact', _('Contact')),
+        ('', _('Other')),
+    )
 
     _form_elements = None
     _form_field_key_cache = None
@@ -142,6 +148,14 @@ class BaseFormPlugin(CMSPlugin):
         max_length=255,
         choices=FORM_TEMPLATES,
         default=DEFAULT_FORM_TEMPLATE,
+    )
+    download_url = models.URLField(_('download URL'), blank=True, null=True)
+    form_type = models.CharField(
+        verbose_name=_('form type'),
+        choices=TYPE_CHOICES,
+        max_length=255,
+        blank=True,
+        null=True,
     )
 
     # Staff notification email settings

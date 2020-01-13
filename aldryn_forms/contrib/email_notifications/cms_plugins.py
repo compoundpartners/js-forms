@@ -23,6 +23,7 @@ from aldryn_forms.constants import (
     ENABLE_FORM_TEMPLATE,
     ENABLE_CUSTOM_CSS,
     MANDRILL_DEFAULT_TEMPLATE,
+    ENABLE_LOCALSTORAGE,
 )
 from .notification import DefaultNotificationConf
 from .models import EmailNotification, FieldConditional, EmailNotificationFormPlugin
@@ -230,6 +231,8 @@ class EmailNotificationForm(FormPlugin):
                 'success_message',
                 'error_message',
                 'action_backend',
+                'form_type',
+                'download_url',
                 'recipients',
             )
         }),
@@ -322,6 +325,7 @@ class EmailNotificationForm(FormPlugin):
         context['form'] = form
         if instance.get_gated_content_container and request.GET.get('noform') == 'true':
             context['post_success'] = True
+        context['enable_localstorage'] = ENABLE_LOCALSTORAGE
         return context
 
     def get_conditionals(self, instance, form, action_type):
