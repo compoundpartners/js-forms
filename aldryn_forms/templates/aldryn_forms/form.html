@@ -48,3 +48,28 @@
         </script>
     {% endaddtoblock %}
 {% endif %}
+{% if USE_LOCALSTORAGE %}
+    {% addtoblock "js" %}
+        <script>
+            $(function() {
+                $( "#{{ instance.form_attributes.id }} :input" ).each(function() {
+                    if ($(this).attr('name') && $(this).is(":hidden") == false){
+                        var name = 'field-' + $(this).attr('name');
+                        var value = localStorage.getItem(name) ? localStorage.getItem(name) : '';
+                        $(this).val(value);
+                    }
+                });
+            });
+            $("#{{ instance.form_attributes.id }}").submit(function() {
+                $( "#{{ instance.form_attributes.id }} :input" ).each(function() {
+                    if ($(this).attr('name') && $(this).is(":hidden") == false){
+                        var name = 'field-' + $(this).attr('name');
+                        var value = $(this).val();
+                        localStorage.setItem(name, value);
+                    }
+                });
+            });
+        </script>
+    {% endaddtoblock %}
+{% endif %}
+

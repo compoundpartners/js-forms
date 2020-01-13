@@ -56,6 +56,7 @@ from .constants import (
     ENABLE_SIMPLE_FORMS,
     RECAPTCHA_PUBLIC_KEY,
     MANDRILL_DEFAULT_TEMPLATE,
+    ENABLE_LOCALSTORAGE,
 )
 
 class FormElement(CMSPluginBase):
@@ -112,6 +113,12 @@ class FormPlugin(FieldContainer):
         context['form'] = form
         if instance.get_gated_content_container and request.GET.get('noform') == 'true':
             context['post_success'] = True
+
+        if ENABLE_LOCALSTORAGE:
+            context['USE_LOCALSTORAGE'] = True
+            if 'id' not in instance.form_attributes:
+                instance.form_attributes['id'] = 'form-%s' % instance.pk
+
         return context
 
     def get_render_template(self, context, instance, placeholder):
