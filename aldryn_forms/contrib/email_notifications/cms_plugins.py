@@ -24,6 +24,7 @@ from aldryn_forms.constants import (
     ENABLE_CUSTOM_CSS,
     MANDRILL_DEFAULT_TEMPLATE,
     ENABLE_LOCALSTORAGE,
+    ENABLE_FORM_ID,
 )
 from .notification import DefaultNotificationConf
 from .models import EmailNotification, FieldConditional, EmailNotificationFormPlugin
@@ -223,18 +224,22 @@ class EmailNotificationForm(FormPlugin):
             'custom_classes',
         )
 
+    main_fields = [
+        'name',
+        'form_id',
+        'success_message',
+        'error_message',
+        'action_backend',
+        'form_type',
+        'download_file',
+        'recipients',
+    ]
+    if not ENABLE_FORM_ID:
+        main_fields.remove('form_id')
 
     fieldsets = (
         (None, {
-            'fields': (
-                'name',
-                'success_message',
-                'error_message',
-                'action_backend',
-                'form_type',
-                'download_url',
-                'recipients',
-            )
+            'fields': main_fields
         }),
         (_('Redirect to'), {
             'classes': ('collapse',),

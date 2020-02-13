@@ -150,10 +150,12 @@ class FormSubmissionBaseForm(forms.Form):
         self.instance.save()
 
     def clean_recipients(self):
-        data = self.cleaned_data['recipients']
-        if not data:
+        recipients = self.cleaned_data['recipients']
+        action_backend = self.cleaned_data['action_backend']
+        action_backend = DEFAULT_ACTION_BACKEND if action_backend == 'default' else action_backend
+        if 'email' in action_backend and not recipients:
             raise forms.ValidationError("Please select recipients")
-        return data
+        return recipients
 
 
 class ExtandableErrorForm(forms.ModelForm):

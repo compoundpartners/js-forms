@@ -10,8 +10,10 @@ logger = logging.getLogger(__name__)
 try:
     from custom.aldryn_forms.api import APIMixin
 except:
+    print('no api mixin')
     class APIMixin(object):
-        pass
+        def form_valid(self, cmsplugin, instance, request, form):
+            raise NotImplementedError('Please create API mixin in custom.aldryn_forms.api')
 
 
 class DefaultAction(BaseAction):
@@ -60,5 +62,7 @@ class APIAction(APIMixin, BaseAction):
         try:
             super().form_valid(cmsplugin, instance, request, form)
         except:
+            recipients = cmsplugin.send_notifications(instance, form, request)
+            form.instance.set_recipients(recipients)
             form.save()
         cmsplugin.send_success_message(instance, request)

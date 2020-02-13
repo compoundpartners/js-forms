@@ -137,7 +137,6 @@ class EmailNotification(models.Model):
 
     def clean(self):
         recipient_email = self.get_recipient_email()
-
         if self.pk and not recipient_email:
             message = ugettext('Please provide a recipient.')
             raise ValidationError(message)

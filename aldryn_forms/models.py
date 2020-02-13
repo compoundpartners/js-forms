@@ -17,6 +17,7 @@ from django.utils.translation import ugettext_lazy as _
 from djangocms_attributes_field.fields import AttributesField
 
 from filer.fields.folder import FilerFolderField
+from filer.fields.file import FilerFileField
 from sizefield.models import FileSizeField
 
 from .helpers import is_form_element
@@ -115,6 +116,7 @@ class BaseFormPlugin(CMSPlugin):
     _form_elements = None
     _form_field_key_cache = None
 
+    form_id = models.SlugField(max_length=255, blank=True, null=True)
     name = models.CharField(
         verbose_name=_('Name'),
         max_length=255,
@@ -150,6 +152,7 @@ class BaseFormPlugin(CMSPlugin):
         default=DEFAULT_FORM_TEMPLATE,
     )
     download_url = models.URLField(_('download URL'), blank=True, null=True)
+    download_file = FilerFileField(verbose_name=_('download file'), on_delete=models.SET_NULL, blank=True, null=True)
     form_type = models.CharField(
         verbose_name=_('form type'),
         choices=TYPE_CHOICES,

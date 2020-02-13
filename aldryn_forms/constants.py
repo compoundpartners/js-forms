@@ -12,6 +12,11 @@ ENABLE_API = getattr(
     'ALDRYN_FORMS_ENABLE_API',
     False,
 )
+ENABLE_FORM_ID = getattr(
+    settings,
+    'ALDRYN_FORMS_ENABLE_FORM_ID',
+    False,
+)
 ENABLE_LOCALSTORAGE = getattr(
     settings,
     'ALDRYN_FORMS_ENABLE_LOCALSTORAGE',
