@@ -23,7 +23,7 @@ from .helpers import (
     get_theme_template_name,
     render_text
 )
-
+from aldryn_forms.constants import DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS
 
 EMAIL_THEMES = getattr(
     settings,
@@ -212,7 +212,9 @@ class EmailNotification(models.Model):
         recipient_name = self.get_recipient_name()
 
         recipient_email = self.get_recipient_email()
-        recipient_email = render(recipient_email)
+
+        if not self.form.action_backend in DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS:
+            recipient_email = render(recipient_email)
 
         if recipient_name:
             recipient_name = render(recipient_name)

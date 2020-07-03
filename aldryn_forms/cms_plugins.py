@@ -57,6 +57,7 @@ from .constants import (
     RECAPTCHA_PUBLIC_KEY,
     MANDRILL_DEFAULT_TEMPLATE,
     ENABLE_LOCALSTORAGE,
+    DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS,
 )
 
 class FormElement(CMSPluginBase):
@@ -613,7 +614,7 @@ class EmailField(BaseTextField):
 
         email = form.cleaned_data.get(field_name)
 
-        if email and instance.email_send_notification:
+        if email and instance.email_send_notification and not form.form_plugin.action_backend in DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS:
             self.send_notification_email(email, form, instance)
 
 if MANDRILL:
@@ -651,7 +652,7 @@ if MANDRILL:
 
             email = form.cleaned_data.get(field_name)
 
-            if email and instance.email_send_notification:
+            if email and instance.email_send_notification and not form.form_plugin.action_backend in DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS:
                 self.send_notification_email(email, form, instance)
 
     plugin_pool.register_plugin(MandrillEmailField)
