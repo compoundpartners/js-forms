@@ -2,7 +2,11 @@
 from email.utils import formataddr
 
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+try:
+    from django.core.urlresolvers import reverse
+except ImportError:
+    # Django 2.0
+    from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils import six
 from django.utils.translation import ugettext_lazy as _

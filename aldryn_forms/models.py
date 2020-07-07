@@ -31,6 +31,7 @@ AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 CMSPluginField = partial(
     models.OneToOneField,
     to=CMSPlugin,
+    on_delete=models.CASCADE,
     related_name='%(app_label)s_%(class)s',
     parent_link=True,
 )
@@ -152,7 +153,7 @@ class BaseFormPlugin(CMSPlugin):
         default=DEFAULT_FORM_TEMPLATE,
     )
     download_url = models.URLField(_('download URL'), blank=True, null=True)
-    download_file = FilerFileField(verbose_name=_('download file'), on_delete=models.SET_NULL, blank=True, null=True)
+    download_file = FilerFileField(on_delete=models.SET_NULL, verbose_name=_('download file'), blank=True, null=True)
     form_type = models.CharField(
         verbose_name=_('form type'),
         choices=TYPE_CHOICES,
@@ -533,6 +534,7 @@ class MandrillEmailFieldPlugin(FieldPluginBase):
 
 class FileFieldPluginBase(FieldPluginBase):
     upload_to = FilerFolderField(
+        on_delete=models.CASCADE,
         verbose_name=_('Upload files to'),
         help_text=_('Select a folder to which all files submitted through '
                     'this field will be uploaded to.')
@@ -567,7 +569,7 @@ class ImageUploadFieldPlugin(FileFieldPluginBase):
 
 @python_2_unicode_compatible
 class Option(models.Model):
-    field = models.ForeignKey(FieldPlugin, editable=False)
+    field = models.ForeignKey(FieldPlugin, on_delete=models.CASCADE, editable=False)
     value = models.CharField(_('Value'), max_length=255)
     default_value = models.BooleanField(_('Default'), default=False)
     position = models.PositiveIntegerField(_('Position'), blank=True)
