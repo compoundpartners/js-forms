@@ -2,7 +2,11 @@
 from __future__ import unicode_literals
 
 from django.contrib import admin
-from django.core.urlresolvers import reverse
+try:
+    from django.core.urlresolvers import reverse
+except ImportError:
+    # Django 2.0
+    from django.urls import reverse
 from django.db.models import Count
 from django.template.response import TemplateResponse
 from django.utils.html import format_html

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-from django.core.urlresolvers import resolve
+try:
+    from django.core.urlresolvers import reverse
+except ImportError:
+    # Django 2.0
+    from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render
 
