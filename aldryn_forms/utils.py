@@ -8,7 +8,7 @@ from cms.utils.moderator import get_cmsplugin_queryset
 from cms.utils.plugins import downcast_plugins, build_plugin_tree
 
 from .action_backends_base import BaseAction
-from .constants import ENABLE_API
+from .constants import ENABLE_API, CUSTOM_ACTION_BACKENDS
 
 
 DEFAULT_ALDRYN_FORMS_ACTION_BACKENDS = {
@@ -19,6 +19,9 @@ DEFAULT_ALDRYN_FORMS_ACTION_BACKENDS = {
 if ENABLE_API:
     DEFAULT_ALDRYN_FORMS_ACTION_BACKENDS['email_api'] = 'aldryn_forms.action_backends.EmailAPIAction'
     DEFAULT_ALDRYN_FORMS_ACTION_BACKENDS['api_only'] = 'aldryn_forms.action_backends.APIAction'
+
+for key, value in CUSTOM_ACTION_BACKENDS.items():
+    DEFAULT_ALDRYN_FORMS_ACTION_BACKENDS[key] = value
 
 ALDRYN_FORMS_ACTION_BACKEND_KEY_MAX_SIZE = 15
 

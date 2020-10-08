@@ -86,6 +86,7 @@ class FormPlugin(FieldContainer):
                 'redirect_type',
                 'redirect_page',
                 'url',
+                'custom_fields',
             )
         }),
         (_('Advanced Settings'), {

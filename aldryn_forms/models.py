@@ -8,6 +8,7 @@ from cms.models.fields import PageField
 from cms.models.pluginmodel import CMSPlugin
 from cms.utils.plugins import build_plugin_tree, downcast_plugins
 from django.conf import settings
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.utils.encoding import python_2_unicode_compatible
@@ -189,6 +190,7 @@ class BaseFormPlugin(CMSPlugin):
         null=True,
         on_delete=models.SET_NULL,
     )
+    custom_fields = JSONField(blank=True, null=True)
 
     cmsplugin_ptr = CMSPluginField()
 

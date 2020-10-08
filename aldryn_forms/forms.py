@@ -11,8 +11,18 @@ from sizefield.utils import filesizeformat
 from .models import FormSubmission, FormPlugin
 from .utils import add_form_error, get_user_model
 from .constants import (
-    DEFAULT_ACTION_BACKEND
+    DEFAULT_ACTION_BACKEND,
+    FORM_CUSTOM_FIELDS
 )
+
+try:
+    from js_custom_fields.forms import CustomFieldsFormMixin
+except:
+    class CustomFieldsFormMixin(object):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            if 'custom_fields' in self.fields:
+                self.fields['custom_fields'].widget = forms.HiddenInput()
 
 
 class FileSizeCheckMixin(object):
@@ -181,7 +191,9 @@ class CheckNameMixin(object):
         return data
 
 
-class FormPluginForm(ExtandableErrorForm):
+class FormPluginForm(CustomFieldsFormMixin, ExtandableErrorForm):
+
+    custom_fields = 'get_custom_fields'
 
     def __init__(self, *args, **kwargs):
         if 'initial' in kwargs:
@@ -213,6 +225,9 @@ class FormPluginForm(ExtandableErrorForm):
             self.cleaned_data['redirect_page'] = None
 
         return self.cleaned_data
+
+    def get_custom_fields(self):
+        return FORM_CUSTOM_FIELDS
 
 
 class BooleanFieldForm(forms.ModelForm):

@@ -233,6 +233,7 @@ class EmailNotificationForm(FormPlugin):
         'form_type',
         'download_file',
         'recipients',
+        'custom_fields',
     ]
     if not ENABLE_FORM_ID:
         main_fields.remove('form_id')
