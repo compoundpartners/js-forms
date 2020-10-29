@@ -212,6 +212,17 @@ class FormPlugin(FieldContainer):
             kwargs['data']['language'] = instance.language
             kwargs['data']['form_plugin_id'] = instance.pk
             kwargs['files'] = request.FILES
+
+        initial = {}
+        form_fields = {}
+
+        fields = instance.get_form_fields()
+        for field in fields:
+            plugin_instance = field.plugin_instance
+            if isinstance(plugin_instance.get_plugin_class_instance(), GetHiddenField) and field.name in request.GET:
+                initial[field.name] = request.GET[field.name]
+        if initial:
+            kwargs['initial'] = initial
         return kwargs
 
     def get_success_url(self, instance):
@@ -563,6 +574,14 @@ class TextAreaField(BaseTextField):
 
 class HiddenField(BaseTextField):
     name = _('Hidden Field')
+    form = HiddenFieldForm
+    form_field_widget_input_type = 'hidden'
+    fieldset_general_fields = ['name', 'initial_value']
+    fieldset_advanced_fields = []
+
+
+class GetHiddenField(BaseTextField):
+    name = _('Hidden Field (field value from request)')
     form = HiddenFieldForm
     form_field_widget_input_type = 'hidden'
     fieldset_general_fields = ['name', 'initial_value']
@@ -1002,6 +1021,7 @@ plugin_pool.register_plugin(EmailField)
 plugin_pool.register_plugin(FileField)
 plugin_pool.register_plugin(GatedContentContainer)
 plugin_pool.register_plugin(HiddenField)
+plugin_pool.register_plugin(GetHiddenField)
 plugin_pool.register_plugin(PhoneField)
 plugin_pool.register_plugin(NumberField)
 plugin_pool.register_plugin(ImageField)

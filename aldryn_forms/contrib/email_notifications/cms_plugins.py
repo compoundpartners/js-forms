@@ -14,6 +14,7 @@ except ImportError:
 from django.contrib import admin
 from django.core.mail import get_connection
 from django.utils.translation import ugettext_lazy as _
+from django.utils.safestring import mark_safe
 
 from cms.plugin_pool import plugin_pool
 
@@ -139,7 +140,7 @@ class ExistingEmailNotificationInline(admin.StackedInline):
                 li_items.append(li_item)
         unordered_list = u'<ul>{0}</ul>'.format(u''.join(li_items))
         help_text = u'<p class="help">{0}</p>'.format(self.text_variables_help_text)
-        return unordered_list + u'\n' + help_text
+        return mark_safe(unordered_list + u'\n' + help_text)
     text_variables.allow_tags = True
     text_variables.short_description = _('available text variables')
 
