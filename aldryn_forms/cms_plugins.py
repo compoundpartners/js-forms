@@ -612,11 +612,12 @@ class EmailField(BaseTextField):
     ] + Field.fieldset_advanced_fields
     email_template_base = 'aldryn_forms/emails/user/notification'
 
-    def send_notification_email(self, email, form, form_field_instance):
+    def send_notification_email(self, email, form, form_field_instance, request):
         context = {
             'form_name': form.instance.name,
             'form_data': form.get_serialized_field_choices(is_confirmation=True),
             'body_text': form_field_instance.email_body,
+            'request': request,
         }
         kwargs = {}
         if MANDRILL and MANDRILL_DEFAULT_TEMPLATE:
@@ -629,13 +630,13 @@ class EmailField(BaseTextField):
             **kwargs
         )
 
-    def form_post_save(self, instance, form, **kwargs):
+    def form_post_save(self, instance, form, request=None, **kwargs):
         field_name = form.form_plugin.get_form_field_name(field=instance)
 
         email = form.cleaned_data.get(field_name)
 
         if email and instance.email_send_notification and not form.form_plugin.action_backend in DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS:
-            self.send_notification_email(email, form, instance)
+            self.send_notification_email(email, form, instance, request)
 
 if MANDRILL:
     class MandrillEmailField(BaseTextField):
@@ -653,11 +654,12 @@ if MANDRILL:
         ] + Field.fieldset_advanced_fields
         email_template_base = 'aldryn_forms/emails/user/notification'
 
-        def send_notification_email(self, email, form, form_field_instance):
+        def send_notification_email(self, email, form, form_field_instance, request):
             context = {
                 'form_name': form.instance.name,
                 'form_data': form.get_serialized_field_choices(is_confirmation=True),
                 'body_text': form_field_instance.email_body,
+                'request': request,
             }
             send_mail(
                 recipients=[email],
@@ -667,13 +669,13 @@ if MANDRILL:
                 mandrill_template=form_field_instance.email_template_name or MANDRILL_DEFAULT_TEMPLATE
             )
 
-        def form_post_save(self, instance, form, **kwargs):
+        def form_post_save(self, instance, form, request=None, **kwargs):
             field_name = form.form_plugin.get_form_field_name(field=instance)
 
             email = form.cleaned_data.get(field_name)
 
             if email and instance.email_send_notification and not form.form_plugin.action_backend in DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS:
-                self.send_notification_email(email, form, instance)
+                self.send_notification_email(email, form, instance, request)
 
     plugin_pool.register_plugin(MandrillEmailField)
 
