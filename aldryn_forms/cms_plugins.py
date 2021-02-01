@@ -57,6 +57,8 @@ from .constants import (
     RECAPTCHA_PUBLIC_KEY,
     MANDRILL_DEFAULT_TEMPLATE,
     ENABLE_LOCALSTORAGE,
+    ENABLE_LOCALSTORAGE_COOKIE,
+    ENABLE_LOCALSTORAGE_COOKIE_CONTAINS,
     DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS,
 )
 
@@ -118,7 +120,11 @@ class FormPlugin(FieldContainer):
             context['post_success'] = True
 
         if ENABLE_LOCALSTORAGE:
-            context['USE_LOCALSTORAGE'] = True
+            if ENABLE_LOCALSTORAGE_COOKIE:
+                if ENABLE_LOCALSTORAGE_COOKIE in request.COOKIES and ENABLE_LOCALSTORAGE_COOKIE_CONTAINS in request.COOKIES[ENABLE_LOCALSTORAGE_COOKIE]:
+                    context['USE_LOCALSTORAGE'] = True
+            else:
+                context['USE_LOCALSTORAGE'] = True
             if 'id' not in instance.form_attributes:
                 instance.form_attributes['id'] = 'form-%s' % instance.pk
 
