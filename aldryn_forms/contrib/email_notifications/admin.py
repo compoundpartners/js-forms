@@ -65,4 +65,4 @@ class PluginAdmin(admin.ModelAdmin):
         return text
     field_list.short_description = 'Fields'
 
-admin.site.register(EmailNotificationFormPlugin, PluginAdmin)
+#admin.site.register(EmailNotificationFormPlugin, PluginAdmin)
