@@ -27,12 +27,6 @@ class PluginAdmin(admin.ModelAdmin):
     list_max_show_all = 100
     prepopulated_fields = {'form_id': ('name',)}
 
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
     def page_url(self, obj):
         url = ''
         page = obj.placeholder.page
@@ -65,4 +59,4 @@ class PluginAdmin(admin.ModelAdmin):
         return text
     field_list.short_description = 'Fields'
 
-#admin.site.register(EmailNotificationFormPlugin, PluginAdmin)
+admin.site.register(EmailNotificationFormPlugin, PluginAdmin)
