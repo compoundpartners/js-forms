@@ -166,6 +166,8 @@ class FormPlugin(FieldContainer):
             )
 
             self.form_valid(instance, request, form)
+            if form.errors:
+                self.form_invalid(instance, request, form)
 
             # post save field hooks
             for field in fields:

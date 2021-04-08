@@ -54,6 +54,9 @@ class EmailAPIAction(APIMixin, BaseAction):
             form.save()
         cmsplugin.send_success_message(instance, request)
 
+    def form_invalid(self, cmsplugin, instance, request, form):
+        pass
+
 
 class APIAction(APIMixin, BaseAction):
     verbose_name = _('API Only')
@@ -66,3 +69,6 @@ class APIAction(APIMixin, BaseAction):
             form.instance.set_recipients(recipients)
             form.save()
         cmsplugin.send_success_message(instance, request)
+
+    def form_invalid(self, cmsplugin, instance, request, form):
+        pass
