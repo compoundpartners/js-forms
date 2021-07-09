@@ -6,6 +6,8 @@ from django.core.validators import (
     MinLengthValidator,
     MaxLengthValidator,
     validate_email,
+    RegexValidator,
+    _lazy_re_compile,
 )
 from django.utils.translation import ugettext_lazy as _
 
@@ -40,3 +42,10 @@ class MaxChoicesValidator(MaxLengthValidator):
 
     message = _('You can\'t choose more than %(limit_value)d options (chosen %(show_value)d).')
     code = 'max_choices'
+
+alphabet_re = _lazy_re_compile(r'^[ \w]+\Z')
+validate_alphabet = RegexValidator(
+    alphabet_re,
+    _("Field can only contain letters of the alphabet."),
+    'invalid'
+)

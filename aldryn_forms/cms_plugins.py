@@ -50,7 +50,8 @@ from .utils import get_action_backends
 from .validators import (
     is_valid_recipient,
     MinChoicesValidator,
-    MaxChoicesValidator
+    MaxChoicesValidator,
+    validate_alphabet
 )
 from .constants import (
     ENABLE_SIMPLE_FORMS,
@@ -537,6 +538,17 @@ class BaseTextField(Field):
 
 class TextField(BaseTextField):
     name = _('Text Field')
+
+
+class AlphabetField(BaseTextField):
+    name = _('Alphabet Field')
+
+    def get_form_field_validators(self, instance):
+        validators = [validate_alphabet]
+
+        if instance.min_value:
+            validators.append(MinLengthValidator(instance.min_value))
+        return validators
 
 
 class TextAreaField(BaseTextField):
@@ -1026,10 +1038,22 @@ class GatedContentContainer(FormElement):
     parent_classes = ['Form', 'EmailNotificationForm']
 
 
+class InnerContentContainer(FormElement):
+    render_template = 'aldryn_forms/inner_content_container.html'
+    name = _('Inner Content Container')
+    model = models.GatedContentContainerPlugin
+    fields = ['attributes']
+    allow_children = True
+    cache = True
+    require_parent = True
+    parent_classes = ['Form', 'EmailNotificationForm']
+
+
 plugin_pool.register_plugin(BooleanField)
 plugin_pool.register_plugin(EmailField)
 plugin_pool.register_plugin(FileField)
 plugin_pool.register_plugin(GatedContentContainer)
+plugin_pool.register_plugin(InnerContentContainer)
 plugin_pool.register_plugin(HiddenField)
 plugin_pool.register_plugin(GetHiddenField)
 plugin_pool.register_plugin(PhoneField)
@@ -1045,3 +1069,4 @@ plugin_pool.register_plugin(SelectField)
 plugin_pool.register_plugin(SubmitButton)
 plugin_pool.register_plugin(TextAreaField)
 plugin_pool.register_plugin(TextField)
+plugin_pool.register_plugin(AlphabetField)
