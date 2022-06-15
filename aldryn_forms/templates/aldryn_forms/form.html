@@ -1,44 +1,47 @@
 {% load i18n cms_tags sekizai_tags %}
 
-<form method="post"
-    {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}
-    {% if instance.form_attributes %} {{ instance.form_attributes_str }}{% endif %}
-    {% if instance.custom_classes %} class="{{ instance.custom_classes }}"{% endif %}>
 
-    {% if form.non_field_errors %}
-        {% for error in form.non_field_errors %}
-            <p>{{ error }}</p>
-        {% endfor %}
-    {% endif %}
 
     {% if post_success %}
-            {% if form_success_url %}
-                <p>{% blocktrans %}You will be <a href="{{ form_success_url }}">redirected shortly</a>.{% endblocktrans %}</p>
-            {% elif instance.get_gated_content_container %}
-                {% for plugin in instance.child_plugin_instances %}
-                    {% if plugin.pk == instance.get_gated_content_container.pk %}
-                        {% with show=True %}
-                            {% render_plugin plugin %}
-                        {% endwith %}
-                    {% endif %}
-                {% endfor %}
-            {% elif instance.success_message %}
-                <p>{{ instance.success_message }}</p>
-            {% else %}
-                <p>{% blocktrans %}Thank you for submitting your information.{% endblocktrans %}</p>
-            {% endif %}
+            {% with counter=instance.get_counter_field %}
+              {% if form_success_url %}
+                  <p>{% blocktrans %}You will be <a href="{{ form_success_url }}">redirected shortly</a>.{% endblocktrans %}</p>
+              {% elif instance.get_gated_content_container %}
+                  {% for plugin in instance.child_plugin_instances %}
+                      {% if plugin.pk == instance.get_gated_content_container.pk %}
+                          {% with show=True %}
+                              {% render_plugin plugin %}
+                          {% endwith %}
+                      {% endif %}
+                  {% endfor %}
+              {% elif instance.success_message %}
+                  <p>--{{ cointer }}--</p>
+                  <p>{{ instance.success_message }}</p>
+              {% else %}
+                  <p>{% blocktrans %}Thank you for submitting your information.{% endblocktrans %}</p>
+              {% endif %}
+            {% endwith %}
     {% else %}
-        {% csrf_token %}
-        {% for plugin in instance.child_plugin_instances %}
-            {% render_plugin plugin %}
-        {% endfor %}
-        {% for field in form.hidden_fields %}
-            {{ field }}
-        {% endfor %}
-    {% endif %}
-</form>
+      <form method="post"
+          {% if form.is_multipart %}enctype="multipart/form-data"{% endif %}
+          {% if instance.form_attributes %} {{ instance.form_attributes_str }}{% endif %}
+          {% if instance.custom_classes %} class="{{ instance.custom_classes }}"{% endif %}>
 
-{# INFO: this solution is currently required because we can't redirect from a plugin. #}
+          {% if form.non_field_errors %}
+              {% for error in form.non_field_errors %}
+                  <p>{{ error }}</p>
+              {% endfor %}
+          {% endif %}
+          {% csrf_token %}
+          {% for plugin in instance.child_plugin_instances %}
+              {% render_plugin plugin %}
+          {% endfor %}
+          {% for field in form.hidden_fields %}
+              {{ field }}
+          {% endfor %}
+      </form>
+    {% endif %}
+
 {% if post_success and form_success_url %}
     {% addtoblock "js" %}
         <script>

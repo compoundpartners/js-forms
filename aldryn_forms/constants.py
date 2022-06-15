@@ -77,4 +77,9 @@ FORM_CUSTOM_FIELDS = getattr(
     'ALDRYN_FORMS_FORM_CUSTOM_FIELDS',
     {},
 )
+COUNTER_FIELD_UNIQ = getattr(
+    settings,
+    'ALDRYN_FORMS_COUNTER_FIELD_UNIQ',
+    False,
+)
 

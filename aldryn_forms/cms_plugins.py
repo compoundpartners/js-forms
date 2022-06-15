@@ -3,8 +3,10 @@ from PIL import Image
 
 from django import forms
 from django.db.models import query
+from django.db.models import Max
 from django.contrib import messages
 from django.contrib.admin import TabularInline
+from django.core.cache import cache
 from django.core.validators import MinLengthValidator
 from django.template.loader import select_template
 from django.utils.safestring import mark_safe
@@ -61,6 +63,7 @@ from .constants import (
     ENABLE_LOCALSTORAGE_COOKIE,
     ENABLE_LOCALSTORAGE_COOKIE_CONTAINS,
     DO_NOT_SEND_NOTIFICATION_EMAIL_WHEN_USE_ACTION_BACKENDS,
+    COUNTER_FIELD_UNIQ,
 )
 
 class FormElement(CMSPluginBase):
@@ -217,10 +220,12 @@ class FormPlugin(FieldContainer):
         }
 
         if request.method in ('POST', 'PUT'):
-            kwargs['data'] = request.POST.copy()
-            kwargs['data']['language'] = instance.language
-            kwargs['data']['form_plugin_id'] = instance.pk
-            kwargs['files'] = request.FILES
+            form_plugin_id = request.POST.get('form_plugin_id') or ''
+            if form_plugin_id.isdigit() and int(form_plugin_id) == instance.pk:
+                kwargs['data'] = request.POST.copy()
+                kwargs['data']['language'] = instance.language
+                kwargs['data']['form_plugin_id'] = instance.pk
+                kwargs['files'] = request.FILES
 
         initial = {}
         form_fields = {}
@@ -606,6 +611,42 @@ class GetHiddenField(BaseTextField):
     form_field_widget_input_type = 'hidden'
     fieldset_general_fields = ['name', 'initial_value']
     fieldset_advanced_fields = []
+
+
+class CounterHiddenField(BaseTextField):
+    name = _('Hidden Counter Field')
+    form = HiddenFieldForm
+    form_field_widget_input_type = 'hidden'
+    fieldset_general_fields = ['name', 'label', 'min_value']
+    fieldset_advanced_fields = []
+
+    def form_pre_save(self, instance, form, **kwargs):
+        key = self.get_cache_key(instance)
+        try:
+            value = cache.incr(key)
+        except ValueError:
+            value = self.get_max_value(instance) or self.get_min_value(instance) or 0
+            value += 1
+            cache.set(key, value)
+        instance.max_value = value
+        instance.save()
+        field_name = form.form_plugin.get_form_field_name(field=instance)
+        form.cleaned_data[field_name] = value
+
+    def get_cache_key(self, instance):
+        if COUNTER_FIELD_UNIQ:
+            return 'counter-hidden-field-%s' % instance.pk
+        return 'counter-hidden-field'
+
+    def get_max_value(self, instance):
+        if COUNTER_FIELD_UNIQ:
+            return instance.max_value
+        return models.FieldPlugin.objects.filter(plugin_type=self.__class__.__name__).aggregate(Max('max_value')).get('max_value__max')
+
+    def get_min_value(self, instance):
+        if COUNTER_FIELD_UNIQ:
+            return instance.min_value
+        return models.FieldPlugin.objects.filter(plugin_type=self.__class__.__name__).aggregate(Max('min_value')).get('min_value__max')
 
 
 class PhoneField(BaseTextField):
@@ -1056,6 +1097,7 @@ plugin_pool.register_plugin(GatedContentContainer)
 plugin_pool.register_plugin(InnerContentContainer)
 plugin_pool.register_plugin(HiddenField)
 plugin_pool.register_plugin(GetHiddenField)
+plugin_pool.register_plugin(CounterHiddenField)
 plugin_pool.register_plugin(PhoneField)
 plugin_pool.register_plugin(NumberField)
 plugin_pool.register_plugin(ImageField)

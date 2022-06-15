@@ -319,7 +319,7 @@ class EmailNotificationForm(FormPlugin):
             return recipients
 
     def render(self, context, instance, placeholder):
-        context = super(EmailNotificationForm, self).render(context, instance, placeholder)
+        context = super(FormPlugin, self).render(context, instance, placeholder)
         request = context['request']
 
         form = self.process_form(instance, request)

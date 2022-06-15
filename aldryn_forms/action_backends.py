@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 try:
     from custom.aldryn_forms.api import APIMixin
 except:
-    print('no api mixin')
     class APIMixin(object):
         def form_valid(self, cmsplugin, instance, request, form):
             raise NotImplementedError('Please create API mixin in custom.aldryn_forms.api')

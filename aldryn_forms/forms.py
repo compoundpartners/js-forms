@@ -118,10 +118,11 @@ class FormSubmissionBaseForm(forms.Form):
         self.fields['form_plugin_id'].initial = self.form_plugin.pk
 
     def _add_error(self, message, field=NON_FIELD_ERRORS):
-        try:
-            self._errors[field].append(message)
-        except KeyError:
-            self._errors[field] = self.error_class([message])
+        if not self._errors is None:
+            try:
+                self._errors[field].append(message)
+            except KeyError:
+                self._errors[field] = self.error_class([message])
 
     def get_serialized_fields(self, is_confirmation=False):
         """
