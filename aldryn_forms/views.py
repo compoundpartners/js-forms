@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-try:
-    from django.core.urlresolvers import reverse
-except ImportError:
-    # Django 2.0
-    from django.urls import reverse
+from django.urls import reverse, resolve
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 
-from cms.utils.page_resolver import get_page_from_request
+from cms.utils.page import get_page_from_request
 
 from .models import FormPlugin
 from .utils import get_plugin_tree
 
-
+@csrf_exempt
 def submit_form_view(request):
     cms_page = get_page_from_request(request)
 
@@ -48,4 +45,17 @@ def submit_form_view(request):
 
         if form.is_valid() and success_url:
             return HttpResponseRedirect(success_url)
+        if form_plugin.form_template:
+            template = form_plugin.form_template
+            if not template.startswith('aldryn_forms/'):
+                template = 'aldryn_forms/' + template
+        context['post_success'] = True
+        context['form_success_url'] = success_url
+        context['post_request'] = True
+        context['form'] = form
+        
     return render(request, template, context)
+
+@csrf_protect
+def submit_form_view_protect(request):
+    return submit_form_view(request)
