@@ -134,8 +134,11 @@ class FormPlugin(FieldContainer):
         return context
 
     def get_render_template(self, context, instance, placeholder):
-        return instance.form_template
-
+        template = instance.form_template
+        if not template.startswith('aldryn_forms/'):
+            template = 'aldryn_forms/' + template
+        return get_template(template)
+    
     def form_valid(self, instance, request, form):
         action_backend = get_action_backends()[form.form_plugin.action_backend]()
         return action_backend.form_valid(self, instance, request, form)
