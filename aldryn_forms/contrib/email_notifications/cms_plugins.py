@@ -93,7 +93,7 @@ class ExistingEmailNotificationInline(admin.StackedInline):
             return super(ExistingEmailNotificationInline, self).formfield_for_foreignkey(db_field, request, **kwargs)
         return super(ExistingEmailNotificationInline, self).formfield_for_dbfield(db_field, request, **kwargs)
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
     def get_fieldsets(self, request, obj=None):
@@ -198,7 +198,7 @@ class ExistingFieldConditionalInline(admin.StackedInline):
 
     readonly_fields = ['field_name_text']
 
-    def has_add_permission(self, request):
+    def has_add_permission(self, request, obj=None):
         return False
 
 
@@ -218,12 +218,8 @@ class EmailNotificationForm(FormPlugin):
         'redirect_type',
         ('redirect_page', 'url'),
     )
-    if ENABLE_FORM_TEMPLATE:
-        advanced_fields = (
-            'form_template',
-        )
     if ENABLE_CUSTOM_CSS:
-        advanced_fields = (
+        advanced_fields += (
             'custom_classes',
         )
 
@@ -234,6 +230,12 @@ class EmailNotificationForm(FormPlugin):
         'error_message',
         'action_backend',
         'form_type',
+    ]
+    if ENABLE_FORM_TEMPLATE:
+        main_fields += [
+            'form_template',
+        ]
+    main_fields += [
         'download_file',
         'recipients',
         'custom_fields',

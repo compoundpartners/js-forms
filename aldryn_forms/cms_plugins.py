@@ -8,9 +8,8 @@ from django.contrib import messages
 from django.contrib.admin import TabularInline
 from django.core.cache import cache
 from django.core.validators import MinLengthValidator
-from django.template.loader import select_template
+from django.template.loader import select_template, get_template
 from django.utils.safestring import mark_safe
-from django.utils.six import text_type
 from django.utils.translation import ugettext, ugettext_lazy as _
 
 from cms.plugin_base import CMSPluginBase
@@ -352,10 +351,10 @@ class Field(FormElement):
 
     def serialize_value(self, instance, value, is_confirmation=False):
         if isinstance(value, query.QuerySet):
-            value = u', '.join(map(text_type, value))
+            value = u', '.join(map(str, value))
         elif value is None:
             value = '-'
-        return text_type(value)
+        return str(value)
 
     def serialize_field(self, form, field, is_confirmation=False):
         """Returns a (key, label, value) named tuple for the given field."""

@@ -5,7 +5,6 @@ from functools import partial
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext, ugettext_lazy as _
 
 from djangocms_text_ckeditor.fields import HTMLField
@@ -69,7 +68,6 @@ class EmailNotificationFormPlugin(FormPlugin):
         return choices
 
 
-@python_2_unicode_compatible
 class EmailNotification(models.Model):
 
     class Meta:
@@ -260,7 +258,6 @@ class EmailNotification(models.Model):
         return render_text(self.subject, context)
 
 
-@python_2_unicode_compatible
 class FieldConditional(models.Model):
 
     class Meta:

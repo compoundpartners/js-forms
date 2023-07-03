@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from email.utils import formataddr
-
 from django.contrib import admin
 try:
     from django.core.urlresolvers import reverse
@@ -8,18 +7,12 @@ except ImportError:
     # Django 2.0
     from django.urls import reverse
 from django.template.loader import render_to_string
-from django.utils import six
 from django.utils.translation import ugettext_lazy as _
-
-if six.PY2:
-    str_dunder_method = '__unicode__'
-else:
-    str_dunder_method = '__str__'
 
 
 class BaseFormSubmissionAdmin(admin.ModelAdmin):
     date_hierarchy = 'sent_at'
-    list_display = [str_dunder_method, 'sent_at', 'language']
+    list_display = ['__str__', 'sent_at', 'language']
     list_filter = ['name', 'language']
     readonly_fields = [
         'name',
