@@ -7,7 +7,7 @@ except ImportError:
     # Django 2.0
     from django.urls import reverse
 from django.template.loader import render_to_string
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 class BaseFormSubmissionAdmin(admin.ModelAdmin):

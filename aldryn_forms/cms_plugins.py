@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.validators import MinLengthValidator
 from django.template.loader import select_template, get_template
 from django.utils.safestring import mark_safe
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 
 from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
@@ -249,7 +249,7 @@ class FormPlugin(FieldContainer):
         Sends a success message to the request user
         using django's contrib.messages app.
         """
-        message = instance.success_message or ugettext('The form has been sent.')
+        message = instance.success_message or gettext('The form has been sent.')
         messages.success(request, mark_safe(message))
 
     def send_notifications(self, instance, form, request=None):
@@ -886,7 +886,7 @@ class BooleanField(Field):
     ]
 
     def serialize_value(self, instance, value, is_confirmation=False):
-        return ugettext('Yes') if value else ugettext('No')
+        return gettext('Yes') if value else gettext('No')
 
 
 class SelectOptionInline(TabularInline):

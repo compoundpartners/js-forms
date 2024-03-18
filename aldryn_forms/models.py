@@ -12,7 +12,7 @@ from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from djangocms_attributes_field.fields import AttributesField
 
 from filer.fields.folder import FilerFolderField

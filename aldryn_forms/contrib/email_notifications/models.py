@@ -5,7 +5,7 @@ from functools import partial
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.translation import ugettext, ugettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 
 from djangocms_text_ckeditor.fields import HTMLField
 
@@ -138,7 +138,7 @@ class EmailNotification(models.Model):
     def clean(self):
         recipient_email = self.get_recipient_email()
         if self.pk and not recipient_email:
-            message = ugettext('Please provide a recipient.')
+            message = gettext('Please provide a recipient.')
             raise ValidationError(message)
         if self.pk and self.body_html and not self.body_text:
             import html2text

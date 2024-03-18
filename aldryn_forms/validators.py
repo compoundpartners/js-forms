@@ -9,7 +9,7 @@ from django.core.validators import (
     RegexValidator,
     _lazy_re_compile,
 )
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 def is_valid_recipient(recipient):
