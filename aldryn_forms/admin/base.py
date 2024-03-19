@@ -52,11 +52,11 @@ class BaseFormSubmissionAdmin(admin.ModelAdmin):
     get_recipients_for_display.short_description = _('people notified')
 
     def get_urls(self):
-        from django.conf.urls import url
+        from django.urls import re_path
 
         def pattern(regex, fn, name):
             args = [regex, self.admin_site.admin_view(fn)]
-            return url(*args, name=self.get_admin_url(name))
+            return re_path(*args, name=self.get_admin_url(name))
 
         url_patterns = [
             pattern(r'export/$', self.get_form_export_view(), 'export'),
