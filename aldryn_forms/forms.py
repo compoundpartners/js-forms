@@ -6,8 +6,6 @@ from django.conf import settings
 from django.forms.forms import NON_FIELD_ERRORS
 from django.utils.translation import gettext, gettext_lazy as _
 
-from sizefield.utils import filesizeformat
-
 from .models import FormSubmission, FormPlugin
 from .utils import add_form_error, get_user_model
 from .constants import (
@@ -37,10 +35,17 @@ class FileSizeCheckMixin(object):
             return
 
         if self.max_size is not None and data.size > self.max_size:
+            try:
+                from sizefield.utils import filesizeformat
+                max_size = filesizeformat(self.max_size)
+                actual_size = filesizeformat(data.size)
+            except ImportError:
+                max_size = self.max_size
+                actual_size = data.size
             raise forms.ValidationError(
                 gettext('File size must be under %(max_size)s. Current file size is %(actual_size)s.') % {
-                    'max_size': filesizeformat(self.max_size),
-                    'actual_size': filesizeformat(data.size),
+                    'max_size': max_size,
+                    'actual_size': actual_size,
                 })
         return data
 
@@ -181,8 +186,9 @@ class CheckNameMixin(object):
         data = self.cleaned_data['name']
         if '-' in data or ' ' in data:
             raise forms.ValidationError("Please fix field name")
-        if data:
-            form_plugin = self.instance.get_form_plugin()
+        if False and data:
+            instance = self.instance
+            form_plugin = instance.get_form_plugin()
             if form_plugin:
                 plugins = form_plugin.get_form_elements()
                 if plugins:

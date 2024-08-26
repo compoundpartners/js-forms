@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.forms import NON_FIELD_ERRORS
 from django.utils.module_loading import import_string
 
-from cms.utils.moderator import get_cmsplugin_queryset
-from cms.utils.plugins import downcast_plugins, build_plugin_tree
+from cms.models import CMSPlugin
+#from cms.utils.plugins import downcast_plugins, build_plugin_tree
 
 from .action_backends_base import BaseAction
 from .constants import ENABLE_API, CUSTOM_ACTION_BACKENDS
@@ -98,29 +97,29 @@ def get_nested_plugins(parent_plugin, include_self=False):
     return found_plugins
 
 
-def get_plugin_tree(model, **kwargs):
-    """
-    Plugins in django CMS are highly related to a placeholder.
+# def get_plugin_tree(model, **kwargs):
+#     """
+#     Plugins in django CMS are highly related to a placeholder.
 
-    This function builds a plugin tree for a plugin with no placeholder context.
+#     This function builds a plugin tree for a plugin with no placeholder context.
 
-    Makes as many database queries as many levels are in the tree.
+#     Makes as many database queries as many levels are in the tree.
 
-    This is ok as forms shouldn't form very deep trees.
-    """
-    plugin = model.objects.get(**kwargs)
-    plugin.parent = None
-    current_level = [plugin]
-    plugin_list = [plugin]
-    while get_next_level(current_level).exists():
-        current_level = get_next_level(current_level)
-        current_level = downcast_plugins(current_level)
-        plugin_list += current_level
-    return build_plugin_tree(plugin_list)[0]
+#     This is ok as forms shouldn't form very deep trees.
+#     """
+#     plugin = model.objects.get(**kwargs)
+#     plugin.parent = None
+#     current_level = [plugin]
+#     plugin_list = [plugin]
+#     while get_next_level(current_level).exists():
+#         current_level = get_next_level(current_level)
+#         current_level = downcast_plugins(current_level)
+#         plugin_list += current_level
+#     return build_plugin_tree(plugin_list)[0]
 
 
 def get_next_level(current_level):
-    all_plugins = get_cmsplugin_queryset()
+    all_plugins = CMSPlugin.objects.all()
     return all_plugins.filter(parent__in=[x.pk for x in current_level])
 
 

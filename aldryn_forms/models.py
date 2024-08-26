@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections import defaultdict, namedtuple, OrderedDict
 from functools import partial
 import json
@@ -6,9 +5,13 @@ import warnings
 
 from cms.models.fields import PageField
 from cms.models.pluginmodel import CMSPlugin
-from cms.utils.plugins import build_plugin_tree, downcast_plugins
+#from cms.utils.plugins import build_plugin_tree, downcast_plugins
+from cms.utils.plugins import get_plugins_as_layered_tree, downcast_plugins
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
+try:
+    from django.db.models import JSONField
+except ImportError:
+    from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.db.models.functions import Coalesce
 from django.utils.functional import cached_property
@@ -17,7 +20,13 @@ from djangocms_attributes_field.fields import AttributesField
 
 from filer.fields.folder import FilerFolderField
 from filer.fields.file import FilerFileField
-from sizefield.models import FileSizeField
+try:
+    from sizefield.models import FileSizeField
+except ImportError:
+    class FileSizeField(models.BigIntegerField):
+        pass
+
+
 
 from .helpers import is_form_element
 from .utils import ALDRYN_FORMS_ACTION_BACKEND_KEY_MAX_SIZE, action_backend_choices
@@ -329,20 +338,21 @@ class BaseFormPlugin(CMSPlugin):
         from .utils import get_nested_plugins
 
         if self.child_plugin_instances is None:
-            descendants = self.get_descendants().order_by('path')
-            # Set parent_id to None in order to
-            # fool the build_plugin_tree function.
-            # This is sadly necessary to avoid getting all nodes
-            # higher than the form.
-            parent_id = self.parent_id
-            self.parent_id = None
-            # Important that this is a list in order to modify
-            # the current instance
-            descendants_with_self = [self] + list(descendants)
-            # Let the cms build the tree
-            build_plugin_tree(descendants_with_self)
-            # Set back the original parent
-            self.parent_id = parent_id
+            tree = self.get_tree(self)
+            # descendants = self.get_descendants().order_by('path')
+            # # Set parent_id to None in order to
+            # # fool the build_plugin_tree function.
+            # # This is sadly necessary to avoid getting all nodes
+            # # higher than the form.
+            # parent_id = self.parent_id
+            # self.parent_id = None
+            # # Important that this is a list in order to modify
+            # # the current instance
+            # descendants_with_self = [self] + list(descendants)
+            # # Let the cms build the tree
+            # build_plugin_tree(descendants_with_self)
+            # # Set back the original parent
+            # self.parent_id = parent_id
 
         if self._form_elements is None:
             children = get_nested_plugins(self)
@@ -351,6 +361,11 @@ class BaseFormPlugin(CMSPlugin):
                 p for p in children_instances if is_form_element(p)]
         return self._form_elements
 
+    def get_tree(self, plugin):
+        plugins = [plugin] + list(plugin.get_descendants())
+        plugins = downcast_plugins(plugins)
+        plugins = list(plugins)
+        return get_plugins_as_layered_tree(plugins)[0]
 
 class FormPlugin(BaseFormPlugin):
 

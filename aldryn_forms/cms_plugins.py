@@ -23,7 +23,6 @@ except ImportError:
     from emailit.api import send_mail
 
 from filer.models import filemodels, imagemodels
-from sizefield.utils import filesizeformat
 
 from . import models
 from .forms import (
@@ -772,9 +771,13 @@ class FileField(Field):
     def get_form_field_kwargs(self, instance):
         kwargs = super(FileField, self).get_form_field_kwargs(instance)
         if instance.max_size:
-            if 'help_text' in kwargs:
-                kwargs['help_text'] = kwargs['help_text'].replace(
-                    'MAXSIZE', filesizeformat(instance.max_size))
+            try:
+                from sizefield.utils import filesizeformat
+                if 'help_text' in kwargs:
+                    kwargs['help_text'] = kwargs['help_text'].replace(
+                        'MAXSIZE', filesizeformat(instance.max_size))
+            except ImportError:
+                pass
             kwargs['max_size'] = instance.max_size
         return kwargs
 
