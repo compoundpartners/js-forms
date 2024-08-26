@@ -57,6 +57,8 @@ from .validators import (
 from .constants import (
     ENABLE_SIMPLE_FORMS,
     RECAPTCHA_PUBLIC_KEY,
+    RECAPTCHA_PRIVATE_KEY,
+    RECAPTCHA_USE_V3,
     MANDRILL_DEFAULT_TEMPLATE,
     ENABLE_LOCALSTORAGE,
     ENABLE_LOCALSTORAGE_COOKIE,
@@ -1035,33 +1037,62 @@ else:
     #plugin_pool.register_plugin(CaptchaField)
 
 try:
-    from snowpenguin.django.recaptcha2.fields import ReCaptchaField
-    from snowpenguin.django.recaptcha2.widgets import ReCaptchaWidget
+    if RECAPTCHA_USE_V3:
+        from snowpenguin.django.recaptcha3.fields import ReCaptchaField as ReCaptcha3Field
+        from snowpenguin.django.recaptcha3.widgets import ReCaptchaHiddenInput
+    else:
+        from snowpenguin.django.recaptcha2.fields import ReCaptchaField as ReCaptcha2Field
+        from snowpenguin.django.recaptcha2.widgets import ReCaptchaWidget
 except ImportError:
     pass
 else:
     # Don't like doing this. But we shouldn't force captcha.
-    class ReCaptchaField(Field):
-        name = _('Re Captcha Field')
-        form = CaptchaFieldForm
-        form_field = ReCaptchaField
-        form_field_widget = ReCaptchaWidget
-        form_field_enabled_options = ['label', 'error_messages']
-        fieldset_general_fields = [
-            'label',
-        ]
-        fieldset_advanced_fields = [
-            'required_message',
-        ]
 
-        def serialize_field(self, *args, **kwargs):
-            # None means don't serialize me
-            return None
+    if RECAPTCHA_USE_V3:
+        @plugin_pool.register_plugin
+        class ReCaptchaField(Field):
+            name = _('Re Captcha Field')
+            form = CaptchaFieldForm
+            form_field = ReCaptcha3Field
+            form_field_widget = ReCaptchaHiddenInput
+            form_field_enabled_options = ['label', 'error_messages']
+            fieldset_general_fields = [
+                'label',
+            ]
+            fieldset_advanced_fields = [
+                'required_message',
+            ]
 
-        def get_form_field_widget_kwargs(self, instance):
-            return {'public_key': RECAPTCHA_PUBLIC_KEY}
+            def serialize_field(self, *args, **kwargs):
+                # None means don't serialize me
+                return None
 
-    plugin_pool.register_plugin(ReCaptchaField)
+            def get_template_names(self, instance, form_plugin=None):
+                template_names = super().get_template_names(instance, form_plugin)
+                template_names.insert(0, 'aldryn_forms/fields/recaptchafield3.html')
+                return template_names
+
+    else:
+        @plugin_pool.register_plugin
+        class ReCaptchaField(Field):
+            name = _('Re Captcha Field')
+            form = CaptchaFieldForm
+            form_field = ReCaptcha2Field
+            form_field_widget = ReCaptchaWidget
+            form_field_enabled_options = ['label', 'error_messages']
+            fieldset_general_fields = [
+                'label',
+            ]
+            fieldset_advanced_fields = [
+                'required_message',
+            ]
+
+            def serialize_field(self, *args, **kwargs):
+                # None means don't serialize me
+                return None
+
+            def get_form_field_widget_kwargs(self, instance):
+                return {'public_key': RECAPTCHA_PUBLIC_KEY}
 
 
 class SubmitButton(FormElement):

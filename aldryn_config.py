@@ -20,6 +20,7 @@ class Form(forms.BaseForm):
     default_action_backend = forms.SelectField('Default Action', ACTIONS, required=True)
     recaptcha_private_key = forms.CharField('ReCaptcha Private Key', required=False)
     recaptcha_public_key = forms.CharField('ReCaptcha Public Key', required=False)
+    recaptcha_use_v3 = forms.CharField('Use ReCaptcha v3', required=False)
 
 
     def to_settings(self, data, settings):
@@ -36,4 +37,11 @@ class Form(forms.BaseForm):
             settings['RECAPTCHA_PRIVATE_KEY'] = data['recaptcha_private_key']
         if data['recaptcha_public_key']:
             settings['RECAPTCHA_PUBLIC_KEY'] = data['recaptcha_public_key']
+        if data['recaptcha_use_v3']:
+            settings['RECAPTCHA_USE_V3'] = data['recaptcha_use_v3']
+            settings['RECAPTCHA_SCORE_THRESHOLD'] = 0.5
+            settings['RECAPTCHA_DEFAULT_ACTION'] = 'generic'
+            settings['INSTALLED_APPS'].append('snowpenguin.django.recaptcha3')
+        else:
+            settings['INSTALLED_APPS'].append('snowpenguin.django.recaptcha2')
         return settings

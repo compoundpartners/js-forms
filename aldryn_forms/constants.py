@@ -55,7 +55,17 @@ DEFAULT_ACTION_BACKEND = getattr(
 RECAPTCHA_PUBLIC_KEY = getattr(
     settings,
     'RECAPTCHA_PUBLIC_KEY',
-    'TESTKEY',
+    None,
+)
+RECAPTCHA_PRIVATE_KEY = getattr(
+    settings,
+    'RECAPTCHA_PRIVATE_KEY',
+    None,
+)
+RECAPTCHA_USE_V3 = getattr(
+    settings,
+    'RECAPTCHA_USE_V3',
+    False,
 )
 MANDRILL_DEFAULT_TEMPLATE = getattr(
     settings,
