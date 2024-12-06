@@ -365,7 +365,12 @@ class BaseFormPlugin(CMSPlugin):
         plugins = [plugin] + list(plugin.get_descendants())
         plugins = downcast_plugins(plugins)
         plugins = list(plugins)
-        return get_plugins_as_layered_tree(plugins)[0]
+        if len(plugins):
+            plugins[0].parent_id = None
+        tree = get_plugins_as_layered_tree(plugins)
+        if len(tree):
+            return tree[0]
+        return []
 
 class FormPlugin(BaseFormPlugin):
 
