@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 from aldryn_forms import __version__
 
@@ -9,6 +10,8 @@ REQUIREMENTS = [
     'djangocms-attributes-field>=0.3.0',
     'django-simple-captcha',
     'django-recaptcha2',
+    'django-recaptcha3',
+    'django-turnstile',
     'tablib',
     'pillow',
     'django-filer',

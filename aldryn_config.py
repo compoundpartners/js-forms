@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from aldryn_client import forms
 
 ACTIONS = (
@@ -19,7 +20,9 @@ class Form(forms.BaseForm):
     default_action_backend = forms.SelectField('Default Action', ACTIONS, required=True)
     recaptcha_private_key = forms.CharField('ReCaptcha Private Key', required=False)
     recaptcha_public_key = forms.CharField('ReCaptcha Public Key', required=False)
-    recaptcha_use_v3 = forms.CharField('Use ReCaptcha v3', required=False)
+    recaptcha_use_v3 = forms.CheckboxField('Use ReCaptcha v3', required=False, initial=False)
+    turnstile_private_key = forms.CharField('Turnstile Private Key', required=False)
+    turnstile_public_key = forms.CharField('Turnstile Public Key', required=False)
 
 
     def to_settings(self, data, settings):
@@ -36,11 +39,23 @@ class Form(forms.BaseForm):
             settings['RECAPTCHA_PRIVATE_KEY'] = data['recaptcha_private_key']
         if data['recaptcha_public_key']:
             settings['RECAPTCHA_PUBLIC_KEY'] = data['recaptcha_public_key']
-        if data['recaptcha_use_v3']:
-            settings['RECAPTCHA_USE_V3'] = data['recaptcha_use_v3']
-            settings['RECAPTCHA_SCORE_THRESHOLD'] = 0.5
-            settings['RECAPTCHA_DEFAULT_ACTION'] = 'generic'
-            settings['INSTALLED_APPS'].append('snowpenguin.django.recaptcha3')
-        else:
-            settings['INSTALLED_APPS'].append('snowpenguin.django.recaptcha2')
+        if data['recaptcha_private_key'] and data['recaptcha_public_key']:
+            if data['recaptcha_use_v3']:
+                settings['RECAPTCHA_USE_V3'] = data['recaptcha_use_v3']
+                settings['RECAPTCHA_SCORE_THRESHOLD'] = 0.5
+                settings['RECAPTCHA_DEFAULT_ACTION'] = 'generic'
+                settings['INSTALLED_APPS'].append('snowpenguin.django.recaptcha3')
+            else:
+                settings['INSTALLED_APPS'].append('snowpenguin.django.recaptcha2')
+        if data['turnstile_private_key']:
+            settings['TURNSTILE_SECRET'] = data['turnstile_private_key']
+        if data['turnstile_public_key']:
+            settings['TURNSTILE_SITEKEY'] = data['turnstile_public_key']
+        if data['turnstile_private_key'] and data['turnstile_public_key']:
+            settings['INSTALLED_APPS'].append('turnstile')
+            settings['TURNSTILE_DEFAULT_CONFIG'] = {
+                'onload': 'turnstile_callback',
+                'render': 'explicit',
+                'size': 'compact',
+            }
         return settings
