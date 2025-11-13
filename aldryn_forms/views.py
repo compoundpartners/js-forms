@@ -48,7 +48,7 @@ def submit_form_view(request):
             template = form_plugin.form_template
             if not template.startswith('aldryn_forms/'):
                 template = 'aldryn_forms/' + template
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
             parts = template.split('/')
             parts.insert(-1, 'ajax')
             template = '/'.join(parts)
