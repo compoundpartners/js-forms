@@ -48,6 +48,12 @@ def submit_form_view(request):
             template = form_plugin.form_template
             if not template.startswith('aldryn_forms/'):
                 template = 'aldryn_forms/' + template
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            parts = template.split('/')
+            parts.insert(-1, 'ajax')
+            template = '/'.join(parts)
+
+
         context['post_success'] = True
         context['form_success_url'] = success_url
         context['post_request'] = True
