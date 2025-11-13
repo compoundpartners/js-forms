@@ -7,7 +7,6 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from cms.utils.page import get_page_from_request
 
 from .models import FormPlugin
-from .utils import get_plugin_tree
 
 @csrf_exempt
 def submit_form_view(request):
