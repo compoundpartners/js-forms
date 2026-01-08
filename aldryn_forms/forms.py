@@ -143,7 +143,7 @@ class FormSubmissionBaseForm(forms.Form):
         """Renders the form data in a format suitable to be serialized.
         """
         fields = self.get_serialized_fields(is_confirmation)
-        fields = [(field.label, field.value) for field in fields]
+        fields = [(field.label or field.name, field.value) for field in fields]
         return fields
 
     def get_serialized_field_dict(self, is_confirmation=False):
