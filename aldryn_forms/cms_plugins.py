@@ -891,6 +891,13 @@ class BooleanField(Field):
         return gettext('Yes') if value else gettext('No')
 
 
+class CheckboxValueField(BooleanField):
+    name = _('Checkbox Value Field')
+
+    def serialize_value(self, instance, value, is_confirmation=False):
+        return instance.label if value else ''
+
+
 class SelectOptionInline(TabularInline):
     model = models.Option
 
@@ -1149,6 +1156,7 @@ class InnerContentContainer(FormElement):
 
 
 plugin_pool.register_plugin(BooleanField)
+plugin_pool.register_plugin(CheckboxValueField)
 plugin_pool.register_plugin(EmailField)
 plugin_pool.register_plugin(FileField)
 plugin_pool.register_plugin(GatedContentContainer)
