@@ -655,7 +655,7 @@ class CounterHiddenField(BaseTextField):
 
 class PhoneField(BaseTextField):
     name = _('Phone Field')
-    form_field_widget_input_type = 'phone'
+    form_field_widget_input_type = 'tel'
 
 
 class NumberField(BaseTextField):
@@ -1093,6 +1093,31 @@ else:
 
             def get_form_field_widget_kwargs(self, instance):
                 return {'public_key': RECAPTCHA_PUBLIC_KEY}
+
+try:
+    from turnstile.fields import TurnstileField
+    from turnstile.widgets import TurnstileWidget
+except ImportError:
+    pass
+else:
+    # Don't like doing this. But we shouldn't force captcha.
+    @plugin_pool.register_plugin
+    class TurnstileCaptchaField(Field):
+        name = _('Turnstile Captcha Field')
+        form = CaptchaFieldForm
+        form_field = TurnstileField
+        form_field_widget = TurnstileWidget
+        form_field_enabled_options = ['label', 'error_messages']
+        fieldset_general_fields = [
+            'label',
+        ]
+        fieldset_advanced_fields = [
+            'required_message',
+        ]
+
+        def serialize_field(self, *args, **kwargs):
+            # None means don't serialize me
+            return None
 
 
 class SubmitButton(FormElement):

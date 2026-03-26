@@ -10,6 +10,8 @@ REQUIREMENTS = [
     'djangocms-attributes-field>=0.3.0',
     'django-simple-captcha',
     'django-recaptcha2',
+    'django-recaptcha3',
+    'django-turnstile',
     'tablib',
     'pillow',
     'django-filer',
